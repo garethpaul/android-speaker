@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="AppTheme" parent="android:Theme.Material.Light">
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="android:Theme.Holo.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="android:actionBarStyle">@style/MyActionBarTheme</item>
+        <item name="android:colorControlNormal">#FFDA03</item>
+        <item name="android:colorControlActivated">#FFDA03</item>
+        <item name="android:colorControlHighlight">#FFDA03</item>
+    </style>
+
+
+    <style name="MyActionBarTheme" parent="@android:style/Widget.Holo.Light.ActionBar">
+        <item name="android:background">#FFDA03</item>
     </style>
 </resources>
