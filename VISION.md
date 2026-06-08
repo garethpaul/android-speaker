@@ -38,7 +38,6 @@ Canonical security policy and reporting:
 
 - [`SECURITY.md`](SECURITY.md)
 
-
 Typed text may be personal. Changes should avoid logging user text or sending it
 to undocumented services.
 
