@@ -23,7 +23,14 @@ public class MainActivity extends Activity {
     private EditText textInput;
 
     static String buildTextToSpeechUrl(String text) throws UnsupportedEncodingException {
-        return TTS_ENDPOINT + URLEncoder.encode(text, "UTF-8");
+        return TTS_ENDPOINT + URLEncoder.encode(normalizeSpeechText(text), "UTF-8");
+    }
+
+    static String normalizeSpeechText(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.trim();
     }
 
     @Override
@@ -42,20 +49,37 @@ public class MainActivity extends Activity {
     }
 
     private void playText(String text) {
-        if (text.trim().length() == 0) {
-            Toast.makeText(this, "Enter text to speak.", Toast.LENGTH_SHORT).show();
+        String speechText = normalizeSpeechText(text);
+        if (speechText.length() == 0) {
+            Toast.makeText(this, R.string.speech_input_required, Toast.LENGTH_SHORT).show();
             return;
         }
 
         releasePlayer();
         MediaPlayer nextPlayer = new MediaPlayer();
         nextPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        nextPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mediaPlayer) {
+                try {
+                    mediaPlayer.start();
+                } catch (IllegalStateException e) {
+                    handlePlaybackFailure(mediaPlayer, e);
+                }
+            }
+        });
+        nextPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(MediaPlayer mediaPlayer, int what, int extra) {
+                handlePlaybackFailure(mediaPlayer, null);
+                return true;
+            }
+        });
 
         try {
-            nextPlayer.setDataSource(buildTextToSpeechUrl(text));
-            nextPlayer.prepare();
-            nextPlayer.start();
+            nextPlayer.setDataSource(buildTextToSpeechUrl(speechText));
             player = nextPlayer;
+            nextPlayer.prepareAsync();
         } catch (UnsupportedEncodingException e) {
             handlePlaybackFailure(nextPlayer, e);
         } catch (IllegalArgumentException e) {
@@ -68,9 +92,19 @@ public class MainActivity extends Activity {
     }
 
     private void handlePlaybackFailure(MediaPlayer failedPlayer, Exception error) {
-        failedPlayer.release();
-        Toast.makeText(this, "Unable to play speech audio.", Toast.LENGTH_SHORT).show();
-        Log.w(TAG, "Unable to play TTS audio.", error);
+        if (failedPlayer != null) {
+            failedPlayer.release();
+            if (player == failedPlayer) {
+                player = null;
+            }
+        }
+
+        Toast.makeText(this, R.string.speech_playback_failed, Toast.LENGTH_SHORT).show();
+        if (error != null) {
+            Log.w(TAG, "Unable to play TTS audio.", error);
+        } else {
+            Log.w(TAG, "Unable to play TTS audio.");
+        }
     }
 
     private void releasePlayer() {

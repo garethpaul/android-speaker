@@ -35,13 +35,73 @@ if ! grep -Fq 'private static final String TTS_ENDPOINT = "https://translate.goo
   exit 1
 fi
 
-if ! grep -Fq 'URLEncoder.encode(text, "UTF-8")' "$MAIN_ACTIVITY"; then
-  printf '%s\n' "Typed text must be URL-encoded with UTF-8." >&2
+if ! grep -Fq 'URLEncoder.encode(normalizeSpeechText(text), "UTF-8")' "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Normalized typed text must be URL-encoded with UTF-8." >&2
+  exit 1
+fi
+
+if ! grep -Fq "static String normalizeSpeechText(String text)" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Speech text normalization helper is missing." >&2
+  exit 1
+fi
+
+if ! grep -Fq "String speechText = normalizeSpeechText(text);" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Playback must normalize text before validation." >&2
+  exit 1
+fi
+
+if ! grep -Fq "buildTextToSpeechUrl(speechText)" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Playback must use normalized text for the TTS URL." >&2
+  exit 1
+fi
+
+if grep -Fq '"Enter text to speak."' "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Empty-input Toast text must live in string resources." >&2
+  exit 1
+fi
+
+if grep -Fq '"Unable to play speech audio."' "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Playback-failure Toast text must live in string resources." >&2
+  exit 1
+fi
+
+if ! grep -Fq "R.string.speech_input_required" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Empty-input Toast must use a string resource." >&2
+  exit 1
+fi
+
+if ! grep -Fq "R.string.speech_playback_failed" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Playback-failure Toast must use a string resource." >&2
   exit 1
 fi
 
 if grep -Fq 'Log.v("android-search", param)' "$MAIN_ACTIVITY"; then
   printf '%s\n' "User-entered text must not be logged." >&2
+  exit 1
+fi
+
+if grep -Fq "nextPlayer.prepare();" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Remote media playback must not prepare synchronously on the UI thread." >&2
+  exit 1
+fi
+
+if ! grep -Fq "nextPlayer.prepareAsync();" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Remote media playback must use asynchronous preparation." >&2
+  exit 1
+fi
+
+if ! grep -Fq "setOnPreparedListener" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Async media playback must start from an OnPreparedListener." >&2
+  exit 1
+fi
+
+if ! grep -Fq "setOnErrorListener" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Async media playback must handle MediaPlayer errors." >&2
+  exit 1
+fi
+
+if ! grep -Fq "if (player == failedPlayer)" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Playback failure handling must clear the active player reference." >&2
   exit 1
 fi
 
@@ -67,6 +127,16 @@ fi
 
 if [ ! -f "$ROOT_DIR/CHANGES.md" ]; then
   printf '%s\n' "CHANGES.md is missing." >&2
+  exit 1
+fi
+
+if [ ! -f "$ROOT_DIR/Makefile" ]; then
+  printf '%s\n' "Makefile is missing." >&2
+  exit 1
+fi
+
+if ! grep -Fq "scripts/check-baseline.sh" "$ROOT_DIR/Makefile"; then
+  printf '%s\n' "Makefile must run the SDK-free baseline check." >&2
   exit 1
 fi
 
@@ -110,6 +180,11 @@ if ! grep -Fq 'android:inputType="textCapSentences"' "$LAYOUT"; then
   exit 1
 fi
 
+if ! grep -Fq 'name="speech_input_required"' "$RES_DIR/values/strings.xml" || ! grep -Fq 'name="speech_playback_failed"' "$RES_DIR/values/strings.xml"; then
+  printf '%s\n' "Playback toast strings must be resource-backed." >&2
+  exit 1
+fi
+
 if ! grep -Fq "LintError" "$ROOT_DIR/app/lint.xml"; then
   printf '%s\n' "lint.xml must document the obsolete lint API database limitation." >&2
   exit 1
@@ -132,6 +207,16 @@ fi
 
 if ! grep -Fq "./gradlew assembleDebug --no-daemon" "$README"; then
   printf '%s\n' "README must document Gradle build verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "make check" "$README"; then
+  printf '%s\n' "README must document the make check wrapper." >&2
+  exit 1
+fi
+
+if ! grep -Fq "asynchronous media preparation" "$README"; then
+  printf '%s\n' "README must document asynchronous media preparation." >&2
   exit 1
 fi
 

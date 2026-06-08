@@ -2,4 +2,6 @@
     <string name="app_name">Speaker</string>
     <string name="play_button">Play</string>
     <string name="speech_input_hint">Text to speak</string>
+    <string name="speech_input_required">Enter text to speak.</string>
+    <string name="speech_playback_failed">Unable to play speech audio.</string>
 </resources>

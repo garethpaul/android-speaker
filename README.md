@@ -7,6 +7,9 @@
 
 `garethpaul/android-speaker` is an Android application or sample. A speaking Android App
 
+This legacy Android sample turns typed text into spoken audio using a remote
+text-to-speech endpoint.
+
 This README is based on the checked-in source, manifests, scripts, and repository metadata on the `master` branch. The project language mix found during review was: Java (2), shell (1).
 
 ## Repository Contents
@@ -41,6 +44,11 @@ Additional scan context:
 ```bash
 git clone https://github.com/garethpaul/android-speaker.git
 cd android-speaker
+make check
+scripts/check-baseline.sh
+./gradlew lint --no-daemon
+./gradlew test --no-daemon
+./gradlew assembleDebug --no-daemon
 ```
 
 The setup commands above are derived from repository files. Legacy mobile, Python, or JavaScript samples may require older SDKs or package versions than a modern workstation uses by default.
@@ -51,13 +59,16 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Testing and Verification
 
-- `./gradlew test` or Android Studio's test runner when the SDK is configured
+- `make check` - runs the SDK-free source baseline checks.
+- `scripts/check-baseline.sh` - runs SDK-free source baseline checks.
+- `./gradlew lint --no-daemon`, `./gradlew test --no-daemon`, and `./gradlew assembleDebug --no-daemon` when the Android SDK is configured.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
 ## Configuration and Secrets
 
 - No required secret or credential file was identified in the repository scan. If you add integrations later, keep secrets out of git.
+- This legacy Android baseline pins Android build-tools 24.0.3 and Android Gradle Plugin 1.1.0.
 
 ## Security and Privacy Notes
 
@@ -69,6 +80,18 @@ When the required SDK or runtime is unavailable, use static checks and source re
 ## Maintenance Notes
 
 - This looks like a legacy Android project or sample. Expect Android SDK, Gradle, and support-library versions to matter.
+- The current baseline URL-encodes text before calling the TTS endpoint, uses an
+  HTTPS request URL, avoids logging user-entered text, and removes the unused
+  external-storage download path.
+- Remote media playback uses asynchronous media preparation so the UI thread
+  does not block while the remote audio stream is prepared.
+- It also uses HTTPS Maven Central for build resolution. `app/lint.xml`
+  suppresses only the obsolete lint API database error from this old toolchain
+  and the missing-density-folder warning for the bitmap asset intentionally kept
+  in `drawable-nodpi`.
+- Future work should replace the remote TTS call with platform `TextToSpeech`
+  or a documented provider, add media playback tests, modernize SDK levels, and
+  verify runtime behavior on an emulator or device.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 
