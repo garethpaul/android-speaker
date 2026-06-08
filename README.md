@@ -1,5 +1,8 @@
 # android-speaker
 
+<!-- README-OVERVIEW-IMAGE -->
+![Project overview](docs/readme-overview.svg)
+
 ## Overview
 
 `garethpaul/android-speaker` is an Android application or sample. A speaking Android App
@@ -78,4 +81,3 @@ Keep changes small and tied to the project that is already present in this repos
 Prior README summary:
 
 > Android Speaker <!-- README-OVERVIEW-IMAGE --> Legacy Android sample that turns typed text into spoken audio using a remote text-to-speech endpoint. Toolchain This project currently uses the original Android build stack: - Gradle wrapper 2.2.1 - Android Gradle Plugin 1.1.0
-
