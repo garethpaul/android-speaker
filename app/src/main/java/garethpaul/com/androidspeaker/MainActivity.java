@@ -39,6 +39,8 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class MainActivity extends Activity {
 
+    private static final String TRANSLATE_TTS_URL = "https://translate.google.com/translate_tts";
+
     private String path;
     private String param;
     private MediaPlayer player;
@@ -67,7 +69,7 @@ public class MainActivity extends Activity {
                         e.printStackTrace();
                     }
 
-                    player.setDataSource("http://translate.google.com/translate_tts?tl=en&q=" + param);
+                    player.setDataSource(TRANSLATE_TTS_URL + "?tl=en&q=" + param);
                     player.prepare();
                     //player.prepareAsync();
                     player.start();
@@ -104,7 +106,7 @@ public class MainActivity extends Activity {
             int count;
             try {
 
-                URL url = new URL("http://translate.google.com/translate_tts");//?tl=en&q=" + urlString[0]);
+                URL url = new URL(TRANSLATE_TTS_URL);//?tl=en&q=" + urlString[0]);
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
                 conn.setReadTimeout(10000);
                 conn.setConnectTimeout(15000);
