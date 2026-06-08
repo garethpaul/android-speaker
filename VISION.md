@@ -40,7 +40,7 @@ to undocumented services.
 Remote TTS behavior should use HTTPS, clear endpoints, and failure handling.
 Generated audio files and local paths should not be committed.
 
-## What We Will Not Merge For Now
+## What We Will Not Merge (For Now)
 
 - New remote TTS providers without privacy and setup notes
 - Broad rewrites that obscure the simple playback sample
