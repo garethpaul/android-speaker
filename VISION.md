@@ -1,5 +1,8 @@
 ## Android Speaker Vision
 
+This document explains the current state and direction of the project.
+Project overview and developer docs: [`README.md`](README.md)
+
 Android Speaker is a legacy Android sample that turns typed text into spoken
 audio using a remote text-to-speech endpoint.
 
