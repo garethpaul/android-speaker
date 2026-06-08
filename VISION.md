@@ -46,3 +46,6 @@ Generated audio files and local paths should not be committed.
 - Broad rewrites that obscure the simple playback sample
 - Storage permission expansion without scoped behavior
 - Generated audio files, local paths, or signing material
+
+This list is a roadmap guardrail, not a permanent rule.
+Strong user demand and strong technical rationale can change it.
