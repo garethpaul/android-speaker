@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Speaker</string>
-
-    <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
+    <string name="play_button">Play</string>
+    <string name="speech_input_hint">Text to speak</string>
 </resources>

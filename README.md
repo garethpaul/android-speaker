@@ -35,9 +35,9 @@ scripts/check-baseline.sh
 Then run Gradle after Android SDK configuration is available:
 
 ```sh
-ANDROID_HOME=/home/gjones/android-sdk ./gradlew tasks --no-daemon
-ANDROID_HOME=/home/gjones/android-sdk ./gradlew assembleDebug --no-daemon
+ANDROID_HOME=/home/gjones/android-sdk ./gradlew lint --no-daemon
 ANDROID_HOME=/home/gjones/android-sdk ./gradlew test --no-daemon
+ANDROID_HOME=/home/gjones/android-sdk ./gradlew assembleDebug --no-daemon
 ```
 
 ## Modernization Notes
@@ -45,6 +45,9 @@ ANDROID_HOME=/home/gjones/android-sdk ./gradlew test --no-daemon
 The current baseline URL-encodes text before calling the TTS endpoint, uses an
 HTTPS request URL, avoids logging user-entered text, and removes the unused
 external-storage download path. It also uses HTTPS Maven Central for build
-resolution. Future work should replace the remote TTS call with platform
-`TextToSpeech` or a documented provider, add media playback tests, modernize SDK
-levels, and verify runtime behavior on an emulator or device.
+resolution. `app/lint.xml` suppresses only the obsolete lint API database error
+from this old toolchain and the missing-density-folder warning for the bitmap
+asset intentionally kept in `drawable-nodpi`. Future work should replace the
+remote TTS call with platform `TextToSpeech` or a documented provider, add media
+playback tests, modernize SDK levels, and verify runtime behavior on an emulator
+or device.
