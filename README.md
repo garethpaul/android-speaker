@@ -80,4 +80,4 @@ Keep changes small and tied to the project that is already present in this repos
 
 Prior README summary:
 
-> Android Speaker <!-- README-OVERVIEW-IMAGE --> Legacy Android sample that turns typed text into spoken audio using a remote text-to-speech endpoint. Toolchain This project currently uses the original Android build stack: - Gradle wrapper 2.2.1 - Android Gradle Plugin 1.1.0
+> Android Speaker Legacy Android sample that turns typed text into spoken audio using a remote text-to-speech endpoint. Toolchain This project currently uses the original Android build stack: - Gradle wrapper 2.2.1 - Android Gradle Plugin 1.1.0
