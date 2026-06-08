@@ -1,5 +1,8 @@
 # Android Speaker
 
+<!-- README-OVERVIEW-IMAGE -->
+![Project overview](docs/readme-overview.svg)
+
 Legacy Android sample that turns typed text into spoken audio using a remote
 text-to-speech endpoint.
 
