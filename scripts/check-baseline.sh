@@ -175,6 +175,26 @@ if ! grep -Fq "scripts/check-baseline.sh" "$ROOT_DIR/Makefile"; then
   exit 1
 fi
 
+if ! grep -Fq "lint:" "$ROOT_DIR/Makefile"; then
+  printf '%s\n' "Makefile must expose a lint gate." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test:" "$ROOT_DIR/Makefile"; then
+  printf '%s\n' "Makefile must expose a test gate." >&2
+  exit 1
+fi
+
+if ! grep -Fq "build:" "$ROOT_DIR/Makefile"; then
+  printf '%s\n' "Makefile must expose a build gate." >&2
+  exit 1
+fi
+
+if ! grep -Fq "verify: lint test build" "$ROOT_DIR/Makefile"; then
+  printf '%s\n' "Makefile verify must run lint, test, and build gates." >&2
+  exit 1
+fi
+
 if grep -Fq "hello_world" "$RES_DIR/values/strings.xml" || grep -Fq "action_settings" "$RES_DIR/values/strings.xml"; then
   printf '%s\n' "Unused starter strings must not be restored." >&2
   exit 1

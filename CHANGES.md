@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-09
+
+- Added root `make lint`, `make test`, and `make build` gates around the
+  existing SDK-free and Gradle verification commands.
+
 ## 2026-06-08
 
 - Normalized speech input before validation and TTS URL construction so leading

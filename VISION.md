@@ -21,6 +21,7 @@ Priority:
 - Avoid expanding external-storage use without a clear reason
 - Keep Android Auto Backup disabled unless restore behavior is explicitly designed
 - Maintain a buildable Android Studio/Gradle baseline
+- Keep root lint, test, and build gates wired to the Gradle project
 - Release media resources on failure, completion, and lifecycle shutdown
 - Keep user-entered speech text bounded before remote TTS requests
 
