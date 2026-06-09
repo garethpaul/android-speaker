@@ -4,6 +4,8 @@
 
 - Normalized speech input before validation and TTS URL construction so leading
   or trailing spaces are not sent to the remote endpoint.
+- Bounded speech input to 200 characters before TTS URL construction and added
+  a resource-backed user message for overlong text.
 - Moved empty-input and playback-failure Toast messages into string resources.
 - Switched remote audio playback to asynchronous `MediaPlayer` preparation and
   added prepared/error listeners.

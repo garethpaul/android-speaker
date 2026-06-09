@@ -18,6 +18,7 @@ import java.net.URLEncoder;
 public class MainActivity extends Activity {
     private static final String TAG = "androidspeaker";
     private static final String TTS_ENDPOINT = "https://translate.google.com/translate_tts?tl=en&q=";
+    private static final int MAX_SPEECH_TEXT_LENGTH = 200;
 
     private MediaPlayer player;
     private EditText textInput;
@@ -52,6 +53,10 @@ public class MainActivity extends Activity {
         String speechText = normalizeSpeechText(text);
         if (speechText.length() == 0) {
             Toast.makeText(this, R.string.speech_input_required, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (speechText.length() > MAX_SPEECH_TEXT_LENGTH) {
+            Toast.makeText(this, R.string.speech_input_too_long, Toast.LENGTH_SHORT).show();
             return;
         }
 

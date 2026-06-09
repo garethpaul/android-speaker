@@ -50,6 +50,21 @@ if ! grep -Fq "String speechText = normalizeSpeechText(text);" "$MAIN_ACTIVITY";
   exit 1
 fi
 
+if ! grep -Fq "private static final int MAX_SPEECH_TEXT_LENGTH = 200" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Speech playback must keep a bounded text length." >&2
+  exit 1
+fi
+
+if ! grep -Fq "speechText.length() > MAX_SPEECH_TEXT_LENGTH" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Speech playback must reject overlong text before building a TTS URL." >&2
+  exit 1
+fi
+
+if ! grep -Fq "R.string.speech_input_too_long" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Overlong speech text Toast must use a string resource." >&2
+  exit 1
+fi
+
 if ! grep -Fq "buildTextToSpeechUrl(speechText)" "$MAIN_ACTIVITY"; then
   printf '%s\n' "Playback must use normalized text for the TTS URL." >&2
   exit 1
@@ -200,7 +215,9 @@ if ! grep -Fq 'android:inputType="textCapSentences"' "$LAYOUT"; then
   exit 1
 fi
 
-if ! grep -Fq 'name="speech_input_required"' "$RES_DIR/values/strings.xml" || ! grep -Fq 'name="speech_playback_failed"' "$RES_DIR/values/strings.xml"; then
+if ! grep -Fq 'name="speech_input_required"' "$RES_DIR/values/strings.xml" || \
+   ! grep -Fq 'name="speech_playback_failed"' "$RES_DIR/values/strings.xml" || \
+   ! grep -Fq 'name="speech_input_too_long"' "$RES_DIR/values/strings.xml"; then
   printf '%s\n' "Playback toast strings must be resource-backed." >&2
   exit 1
 fi

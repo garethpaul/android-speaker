@@ -72,6 +72,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 - No required secret or credential file was identified in the repository scan. If you add integrations later, keep secrets out of git.
 - This legacy Android baseline pins Android build-tools 24.0.3 and Android Gradle Plugin 1.1.0.
+- Speech input is trimmed, must be non-empty, and is capped at 200 characters
+  before constructing the remote TTS URL.
 
 ## Security and Privacy Notes
 
@@ -103,6 +105,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `VISION.md` for project direction and contribution guardrails.
 - See `docs/plans/2026-06-09-speaker-playback-completion-cleanup.md` for the
   playback completion cleanup contract.
+- See `docs/plans/2026-06-09-speaker-speech-length-bound.md` for the speech
+  input length contract.
 
 ## Contributing
 
