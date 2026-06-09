@@ -77,6 +77,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - This legacy Android baseline pins Android build-tools 24.0.3 and Android Gradle Plugin 1.1.0.
 - Speech input is trimmed, must be non-empty, and is capped at 200 characters
   before constructing the remote TTS URL.
+- Startup checks that the required speech controls are available before wiring
+  playback actions.
 
 ## Security and Privacy Notes
 
@@ -112,6 +114,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   input length contract.
 - See `docs/plans/2026-06-09-speaker-make-gate-targets.md` for the root lint,
   test, and build gate contract.
+- See `docs/plans/2026-06-09-speaker-startup-control-guard.md` for the
+  required control startup guard.
 
 ## Contributing
 

@@ -24,6 +24,7 @@ Priority:
 - Keep root lint, test, and build gates wired to the Gradle project
 - Release media resources on failure, completion, and lifecycle shutdown
 - Keep user-entered speech text bounded before remote TTS requests
+- Keep startup guarded when required speech controls are missing
 
 Next priorities:
 

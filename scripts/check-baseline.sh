@@ -70,6 +70,21 @@ if ! grep -Fq "buildTextToSpeechUrl(speechText)" "$MAIN_ACTIVITY"; then
   exit 1
 fi
 
+if ! grep -Fq "if (textInput == null || button == null)" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Speaker startup must guard required layout controls." >&2
+  exit 1
+fi
+
+if ! grep -Fq 'Log.e(TAG, "Speaker controls are unavailable.");' "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Speaker startup control failures must use sanitized logging." >&2
+  exit 1
+fi
+
+if ! grep -Fq "finish();" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Speaker startup must finish when required controls are unavailable." >&2
+  exit 1
+fi
+
 if grep -Fq '"Enter text to speak."' "$MAIN_ACTIVITY"; then
   printf '%s\n' "Empty-input Toast text must live in string resources." >&2
   exit 1
@@ -279,6 +294,16 @@ fi
 
 if ! grep -Fq "Auto Backup disabled" "$README"; then
   printf '%s\n' "README must document the disabled Auto Backup baseline." >&2
+  exit 1
+fi
+
+if ! grep -Fq "required speech controls" "$README"; then
+  printf '%s\n' "README must document required speech control startup guards." >&2
+  exit 1
+fi
+
+if ! grep -Fq "make check" "$ROOT_DIR/docs/plans/2026-06-09-speaker-startup-control-guard.md"; then
+  printf '%s\n' "Speaker startup control guard plan must document make check verification." >&2
   exit 1
 fi
 

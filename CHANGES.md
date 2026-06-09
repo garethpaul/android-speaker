@@ -2,6 +2,7 @@
 
 ## 2026-06-09
 
+- Guarded startup against missing required speech input or play button controls.
 - Added root `make lint`, `make test`, and `make build` gates around the
   existing SDK-free and Gradle verification commands.
 

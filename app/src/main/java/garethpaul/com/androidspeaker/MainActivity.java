@@ -41,6 +41,12 @@ public class MainActivity extends Activity {
         textInput = (EditText) findViewById(R.id.editText);
 
         final Button button = (Button) findViewById(R.id.button);
+        if (textInput == null || button == null) {
+            Log.e(TAG, "Speaker controls are unavailable.");
+            finish();
+            return;
+        }
+
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 playText(textInput.getText().toString());
