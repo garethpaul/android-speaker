@@ -61,6 +61,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 - `make check` - runs the SDK-free source baseline checks.
 - `scripts/check-baseline.sh` - runs SDK-free source baseline checks.
+- The SDK-free baseline protects input normalization, URL encoding, async media
+  preparation, playback failure handling, completion cleanup, and resource
+  hygiene.
 - `./gradlew lint --no-daemon`, `./gradlew test --no-daemon`, and `./gradlew assembleDebug --no-daemon` when the Android SDK is configured.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
@@ -84,7 +87,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   HTTPS request URL, avoids logging user-entered text, and removes the unused
   external-storage download path.
 - Remote media playback uses asynchronous media preparation so the UI thread
-  does not block while the remote audio stream is prepared.
+  does not block while the remote audio stream is prepared, and completed
+  playback releases its active `MediaPlayer`.
 - It also uses HTTPS Maven Central for build resolution. `app/lint.xml`
   suppresses only the obsolete lint API database error from this old toolchain
   and the missing-density-folder warning for the bitmap asset intentionally kept
@@ -94,6 +98,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   verify runtime behavior on an emulator or device.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
+- See `docs/plans/2026-06-09-speaker-playback-completion-cleanup.md` for the
+  playback completion cleanup contract.
 
 ## Contributing
 

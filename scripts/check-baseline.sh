@@ -100,6 +100,21 @@ if ! grep -Fq "setOnErrorListener" "$MAIN_ACTIVITY"; then
   exit 1
 fi
 
+if ! grep -Fq "setOnCompletionListener" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Async media playback must release completed MediaPlayer instances." >&2
+  exit 1
+fi
+
+if ! grep -Fq "private void handlePlaybackCompletion(MediaPlayer completedPlayer)" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Playback completion handling must be centralized." >&2
+  exit 1
+fi
+
+if ! grep -Fq "if (player == completedPlayer)" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Playback completion handling must clear the active player reference." >&2
+  exit 1
+fi
+
 if ! grep -Fq "if (player == failedPlayer)" "$MAIN_ACTIVITY"; then
   printf '%s\n' "Playback failure handling must clear the active player reference." >&2
   exit 1

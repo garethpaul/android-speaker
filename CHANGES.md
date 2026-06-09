@@ -15,3 +15,4 @@
   background into the app theme.
 - Moved the speaker bitmap asset to `drawable-nodpi`, removed unused starter
   strings and menu resources, and documented the narrow legacy lint baseline.
+- Released the active `MediaPlayer` when asynchronous playback completes.

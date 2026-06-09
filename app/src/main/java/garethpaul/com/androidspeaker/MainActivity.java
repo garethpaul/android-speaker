@@ -75,6 +75,12 @@ public class MainActivity extends Activity {
                 return true;
             }
         });
+        nextPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mediaPlayer) {
+                handlePlaybackCompletion(mediaPlayer);
+            }
+        });
 
         try {
             nextPlayer.setDataSource(buildTextToSpeechUrl(speechText));
@@ -88,6 +94,15 @@ public class MainActivity extends Activity {
             handlePlaybackFailure(nextPlayer, e);
         } catch (IOException e) {
             handlePlaybackFailure(nextPlayer, e);
+        }
+    }
+
+    private void handlePlaybackCompletion(MediaPlayer completedPlayer) {
+        if (completedPlayer != null) {
+            completedPlayer.release();
+            if (player == completedPlayer) {
+                player = null;
+            }
         }
     }
 

@@ -20,6 +20,7 @@ Priority:
 - Keep network and media behavior easy to inspect in `MainActivity`
 - Avoid expanding external-storage use without a clear reason
 - Maintain a buildable Android Studio/Gradle baseline
+- Release media resources on failure, completion, and lifecycle shutdown
 
 Next priorities:
 
