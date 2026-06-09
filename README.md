@@ -79,6 +79,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Review changes touching mobile permissions or privacy-sensitive device data; examples from the scan include app/src/main/AndroidManifest.xml, docs/plans/2026-06-08-speaker-lint-resource-baseline.md, docs/plans/2026-06-08-speaker-privacy-build-baseline.md, gradlew, and 1 more.
 - Review changes touching file, media, JSON, XML, CSV, OCR, or data parsing; examples from the scan include app/lint.xml, app/src/main/AndroidManifest.xml, app/src/main/res/values/colors.xml, app/src/main/res/values-v21/styles.xml, and 3 more.
 - Review changes touching database, model, or persistence code; examples from the scan include docs/plans/2026-06-08-speaker-privacy-build-baseline.md.
+- Auto Backup disabled is part of the privacy baseline because the app has no
+  documented restore behavior for user-entered speech text or generated
+  playback state.
 
 ## Maintenance Notes
 

@@ -125,6 +125,11 @@ if grep -Fq "WRITE_EXTERNAL_STORAGE" "$MANIFEST"; then
   exit 1
 fi
 
+if ! grep -Fq 'android:allowBackup="false"' "$MANIFEST"; then
+  printf '%s\n' "Android Auto Backup must stay disabled for this speech sample." >&2
+  exit 1
+fi
+
 if git -C "$ROOT_DIR" ls-files '.idea/*' '*.iml' | grep -q .; then
   printf '%s\n' "Generated IDE metadata must not be tracked." >&2
   exit 1
@@ -232,6 +237,11 @@ fi
 
 if ! grep -Fq "asynchronous media preparation" "$README"; then
   printf '%s\n' "README must document asynchronous media preparation." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Auto Backup disabled" "$README"; then
+  printf '%s\n' "README must document the disabled Auto Backup baseline." >&2
   exit 1
 fi
 

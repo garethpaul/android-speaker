@@ -19,6 +19,7 @@ Priority:
 - Preserve the typed-text-to-audio playback flow
 - Keep network and media behavior easy to inspect in `MainActivity`
 - Avoid expanding external-storage use without a clear reason
+- Keep Android Auto Backup disabled unless restore behavior is explicitly designed
 - Maintain a buildable Android Studio/Gradle baseline
 - Release media resources on failure, completion, and lifecycle shutdown
 
@@ -47,6 +48,8 @@ to undocumented services.
 
 Remote TTS behavior should use HTTPS, clear endpoints, and failure handling.
 Generated audio files and local paths should not be committed.
+Auto Backup should remain disabled unless the app gains documented local data
+that is safe to restore across devices.
 
 ## What We Will Not Merge (For Now)
 

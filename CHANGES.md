@@ -16,3 +16,5 @@
 - Moved the speaker bitmap asset to `drawable-nodpi`, removed unused starter
   strings and menu resources, and documented the narrow legacy lint baseline.
 - Released the active `MediaPlayer` when asynchronous playback completes.
+- Disabled Android Auto Backup and added a source baseline check for the privacy
+  setting.
