@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Released active speech playback when the activity pauses so remote audio does
+  not continue after the UI leaves the foreground.
 - Ignored stale `MediaPlayer` prepared, completion, and failure callbacks after
   newer playback requests replace the active player.
 - Guarded startup against missing required speech input or play button controls.

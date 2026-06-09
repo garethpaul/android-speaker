@@ -9,6 +9,7 @@ ROOT_BUILD="$ROOT_DIR/build.gradle"
 LAYOUT="$ROOT_DIR/app/src/main/res/layout/activity_main.xml"
 README="$ROOT_DIR/README.md"
 RES_DIR="$ROOT_DIR/app/src/main/res"
+PAUSE_RELEASE_PLAN="$ROOT_DIR/docs/plans/2026-06-09-speaker-pause-release.md"
 
 if ! grep -Fq "url 'https://repo1.maven.org/maven2'" "$ROOT_BUILD"; then
   printf '%s\n' "Build repositories must use HTTPS Maven Central." >&2
@@ -137,6 +138,37 @@ fi
 
 if ! grep -Fq "private void handlePlaybackCompletion(MediaPlayer completedPlayer)" "$MAIN_ACTIVITY"; then
   printf '%s\n' "Playback completion handling must be centralized." >&2
+  exit 1
+fi
+
+if ! grep -Fq "protected void onPause()" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Activity pause must release active speech playback." >&2
+  exit 1
+fi
+
+if ! awk '
+  /protected void onPause\(\)/ {
+    in_on_pause = 1
+    saw_release = 0
+    saw_super = 0
+  }
+  in_on_pause && /releasePlayer\(\);/ {
+    saw_release = 1
+  }
+  in_on_pause && /super\.onPause\(\);/ {
+    saw_super = 1
+  }
+  in_on_pause && /^    }/ {
+    if (saw_release && saw_super) {
+      found = 1
+    }
+    in_on_pause = 0
+  }
+  END {
+    exit found ? 0 : 1
+  }
+' "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Activity pause must release playback and preserve the Android lifecycle callback." >&2
   exit 1
 fi
 
@@ -317,6 +349,11 @@ if ! grep -Fq "Stale MediaPlayer callbacks are ignored" "$README"; then
   exit 1
 fi
 
+if ! grep -Fq "Active speech playback is released when the activity pauses" "$README"; then
+  printf '%s\n' "README must document pause-time playback release." >&2
+  exit 1
+fi
+
 if ! grep -Fq "make check" "$ROOT_DIR/docs/plans/2026-06-09-speaker-startup-control-guard.md"; then
   printf '%s\n' "Speaker startup control guard plan must document make check verification." >&2
   exit 1
@@ -324,6 +361,16 @@ fi
 
 if ! grep -Fq "make check" "$ROOT_DIR/docs/plans/2026-06-09-speaker-stale-player-callback-guard.md"; then
   printf '%s\n' "Speaker stale MediaPlayer callback plan must document make check verification." >&2
+  exit 1
+fi
+
+if [ ! -f "$PAUSE_RELEASE_PLAN" ]; then
+  printf '%s\n' "Speaker pause release plan is missing." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$PAUSE_RELEASE_PLAN" || ! grep -Fq "make check" "$PAUSE_RELEASE_PLAN"; then
+  printf '%s\n' "Speaker pause release plan must record completed status and make check verification." >&2
   exit 1
 fi
 

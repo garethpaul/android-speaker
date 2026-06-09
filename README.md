@@ -99,6 +99,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Remote media playback uses asynchronous media preparation so the UI thread
   does not block while the remote audio stream is prepared, and completed
   playback releases its active `MediaPlayer`.
+- Active speech playback is released when the activity pauses so remote audio
+  does not continue after the UI leaves the foreground.
 - Stale MediaPlayer callbacks are ignored so older preparation, completion, or
   failure events cannot affect a newer playback request.
 - It also uses HTTPS Maven Central for build resolution. `app/lint.xml`
@@ -120,6 +122,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   required control startup guard.
 - See `docs/plans/2026-06-09-speaker-stale-player-callback-guard.md` for the
   stale MediaPlayer callback guard.
+- See `docs/plans/2026-06-09-speaker-pause-release.md` for the pause-time
+  playback release contract.
 
 ## Contributing
 
