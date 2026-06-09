@@ -23,6 +23,7 @@ Priority:
 - Maintain a buildable Android Studio/Gradle baseline
 - Keep root lint, test, and build gates wired to the Gradle project
 - Release media resources on failure, completion, and lifecycle shutdown
+- Route media startup security failures through the same playback cleanup path
 - Release active speech playback when the activity pauses
 - Ignore stale media callbacks after a newer playback request replaces them
 - Keep user-entered speech text bounded before remote TTS requests

@@ -107,6 +107,8 @@ public class MainActivity extends Activity {
             handlePlaybackFailure(nextPlayer, e);
         } catch (IllegalStateException e) {
             handlePlaybackFailure(nextPlayer, e);
+        } catch (SecurityException e) {
+            handlePlaybackFailure(nextPlayer, e);
         } catch (IOException e) {
             handlePlaybackFailure(nextPlayer, e);
         }

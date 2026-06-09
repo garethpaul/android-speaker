@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Routed MediaPlayer security failures through the existing playback failure
+  cleanup path.
 - Released active speech playback when the activity pauses so remote audio does
   not continue after the UI leaves the foreground.
 - Ignored stale `MediaPlayer` prepared, completion, and failure callbacks after

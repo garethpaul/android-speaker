@@ -10,6 +10,7 @@ LAYOUT="$ROOT_DIR/app/src/main/res/layout/activity_main.xml"
 README="$ROOT_DIR/README.md"
 RES_DIR="$ROOT_DIR/app/src/main/res"
 PAUSE_RELEASE_PLAN="$ROOT_DIR/docs/plans/2026-06-09-speaker-pause-release.md"
+MEDIA_SECURITY_PLAN="$ROOT_DIR/docs/plans/2026-06-09-speaker-media-security-exception.md"
 
 if ! grep -Fq "url 'https://repo1.maven.org/maven2'" "$ROOT_BUILD"; then
   printf '%s\n' "Build repositories must use HTTPS Maven Central." >&2
@@ -192,6 +193,11 @@ if ! grep -Fq "player = nextPlayer;" "$MAIN_ACTIVITY"; then
   exit 1
 fi
 
+if ! grep -Fq "catch (SecurityException e)" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Playback startup must route MediaPlayer security failures through the failure handler." >&2
+  exit 1
+fi
+
 if grep -Fq "WRITE_EXTERNAL_STORAGE" "$MANIFEST"; then
   printf '%s\n' "Unused external storage permission must not be requested." >&2
   exit 1
@@ -371,6 +377,11 @@ fi
 
 if ! grep -Fq "status: completed" "$PAUSE_RELEASE_PLAN" || ! grep -Fq "make check" "$PAUSE_RELEASE_PLAN"; then
   printf '%s\n' "Speaker pause release plan must record completed status and make check verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "make check" "$MEDIA_SECURITY_PLAN"; then
+  printf '%s\n' "Speaker media security-exception plan must document make check verification." >&2
   exit 1
 fi
 
