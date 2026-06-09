@@ -99,6 +99,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Remote media playback uses asynchronous media preparation so the UI thread
   does not block while the remote audio stream is prepared, and completed
   playback releases its active `MediaPlayer`.
+- Stale MediaPlayer callbacks are ignored so older preparation, completion, or
+  failure events cannot affect a newer playback request.
 - It also uses HTTPS Maven Central for build resolution. `app/lint.xml`
   suppresses only the obsolete lint API database error from this old toolchain
   and the missing-density-folder warning for the bitmap asset intentionally kept
@@ -116,6 +118,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   test, and build gate contract.
 - See `docs/plans/2026-06-09-speaker-startup-control-guard.md` for the
   required control startup guard.
+- See `docs/plans/2026-06-09-speaker-stale-player-callback-guard.md` for the
+  stale MediaPlayer callback guard.
 
 ## Contributing
 

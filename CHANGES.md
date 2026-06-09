@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Ignored stale `MediaPlayer` prepared, completion, and failure callbacks after
+  newer playback requests replace the active player.
 - Guarded startup against missing required speech input or play button controls.
 - Added root `make lint`, `make test`, and `make build` gates around the
   existing SDK-free and Gradle verification commands.

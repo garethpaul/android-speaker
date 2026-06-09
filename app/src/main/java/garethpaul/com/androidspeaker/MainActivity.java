@@ -72,6 +72,10 @@ public class MainActivity extends Activity {
         nextPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mediaPlayer) {
+                if (mediaPlayer == null || player != mediaPlayer) {
+                    return;
+                }
+
                 try {
                     mediaPlayer.start();
                 } catch (IllegalStateException e) {
@@ -93,9 +97,9 @@ public class MainActivity extends Activity {
             }
         });
 
+        player = nextPlayer;
         try {
             nextPlayer.setDataSource(buildTextToSpeechUrl(speechText));
-            player = nextPlayer;
             nextPlayer.prepareAsync();
         } catch (UnsupportedEncodingException e) {
             handlePlaybackFailure(nextPlayer, e);
@@ -109,21 +113,21 @@ public class MainActivity extends Activity {
     }
 
     private void handlePlaybackCompletion(MediaPlayer completedPlayer) {
-        if (completedPlayer != null) {
-            completedPlayer.release();
-            if (player == completedPlayer) {
-                player = null;
-            }
+        if (completedPlayer == null || player != completedPlayer) {
+            return;
         }
+
+        completedPlayer.release();
+        player = null;
     }
 
     private void handlePlaybackFailure(MediaPlayer failedPlayer, Exception error) {
-        if (failedPlayer != null) {
-            failedPlayer.release();
-            if (player == failedPlayer) {
-                player = null;
-            }
+        if (failedPlayer == null || player != failedPlayer) {
+            return;
         }
+
+        failedPlayer.release();
+        player = null;
 
         Toast.makeText(this, R.string.speech_playback_failed, Toast.LENGTH_SHORT).show();
         if (error != null) {

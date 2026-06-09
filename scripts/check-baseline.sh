@@ -140,13 +140,23 @@ if ! grep -Fq "private void handlePlaybackCompletion(MediaPlayer completedPlayer
   exit 1
 fi
 
-if ! grep -Fq "if (player == completedPlayer)" "$MAIN_ACTIVITY"; then
-  printf '%s\n' "Playback completion handling must clear the active player reference." >&2
+if ! grep -Fq "if (mediaPlayer == null || player != mediaPlayer)" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Playback preparation must ignore stale MediaPlayer callbacks." >&2
   exit 1
 fi
 
-if ! grep -Fq "if (player == failedPlayer)" "$MAIN_ACTIVITY"; then
-  printf '%s\n' "Playback failure handling must clear the active player reference." >&2
+if ! grep -Fq "if (completedPlayer == null || player != completedPlayer)" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Playback completion handling must ignore stale MediaPlayer callbacks." >&2
+  exit 1
+fi
+
+if ! grep -Fq "if (failedPlayer == null || player != failedPlayer)" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Playback failure handling must ignore stale MediaPlayer callbacks." >&2
+  exit 1
+fi
+
+if ! grep -Fq "player = nextPlayer;" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Playback must mark the active MediaPlayer before data-source preparation." >&2
   exit 1
 fi
 
@@ -302,8 +312,18 @@ if ! grep -Fq "required speech controls" "$README"; then
   exit 1
 fi
 
+if ! grep -Fq "Stale MediaPlayer callbacks are ignored" "$README"; then
+  printf '%s\n' "README must document stale MediaPlayer callback guards." >&2
+  exit 1
+fi
+
 if ! grep -Fq "make check" "$ROOT_DIR/docs/plans/2026-06-09-speaker-startup-control-guard.md"; then
   printf '%s\n' "Speaker startup control guard plan must document make check verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "make check" "$ROOT_DIR/docs/plans/2026-06-09-speaker-stale-player-callback-guard.md"; then
+  printf '%s\n' "Speaker stale MediaPlayer callback plan must document make check verification." >&2
   exit 1
 fi
 
