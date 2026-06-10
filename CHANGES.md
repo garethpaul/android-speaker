@@ -2,6 +2,15 @@
 
 ## 2026-06-10
 
+- Replaced the undocumented remote TTS URL and `MediaPlayer` flow with Android's
+  platform `TextToSpeech` engine, then removed the unnecessary network
+  permission.
+- Disabled playback until engine initialization succeeds, ignored stale
+  utterance callbacks, stopped speech on pause, and shut the engine down on
+  destroy.
+- Enforced the 200-character limit in the layout, made root checks portable,
+  accepted either Android SDK variable, and pinned CI to Ubuntu 24.04 with
+  superseded-run cancellation.
 - Added a pinned, read-only GitHub Actions check workflow that runs the existing
   `make check` baseline with a bounded timeout and explicit SDK-free execution.
 - Added an SDK-free guard requiring the CI workflow and completed CI baseline

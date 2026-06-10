@@ -4,10 +4,10 @@ This document explains the current state and direction of the project.
 Project overview and developer docs: [`README.md`](README.md)
 
 Android Speaker is a legacy Android sample that turns typed text into spoken
-audio using a remote text-to-speech endpoint.
+audio using Android's platform text-to-speech engine.
 
 The repository is useful as a small example of Android input handling,
-network-backed audio playback, and older media APIs.
+platform speech playback, and Android lifecycle management.
 
 The goal is to keep the sample readable while moving future work toward safer
 text-to-speech, storage, and network behavior.
@@ -17,23 +17,23 @@ The current focus is:
 Priority:
 
 - Preserve the typed-text-to-audio playback flow
-- Keep network and media behavior easy to inspect in `MainActivity`
+- Keep speech engine behavior easy to inspect in `MainActivity`
 - Avoid expanding external-storage use without a clear reason
 - Keep Android Auto Backup disabled unless restore behavior is explicitly designed
 - Maintain a buildable Android Studio/Gradle baseline
 - Keep root lint, test, and build gates wired to the Gradle project
-- Release media resources on failure, completion, and lifecycle shutdown
-- Route media startup security failures through the same playback cleanup path
-- Release active speech playback when the activity pauses
-- Ignore stale media callbacks after a newer playback request replaces them
+- Disable playback until platform speech initialization succeeds
+- Stop active speech when the activity pauses and shut down on destroy
+- Ignore stale utterance callbacks after a newer speech request replaces them
 - Keep GitHub Actions running the root `make check` baseline before review
-- Keep user-entered speech text bounded before remote TTS requests
+- Keep user-entered speech text bounded before platform engine dispatch
 - Keep startup guarded when required speech controls are missing
 
 Next priorities:
 
-- Prefer platform `TextToSpeech` or documented HTTPS APIs over ad hoc remote TTS
-- Remove obsolete HTTP and storage assumptions
+- Keep hard-coded remote speech endpoints and unnecessary network permission out
+  of the app
+- Remove obsolete storage assumptions
 - Add tests or manual verification notes for playback behavior
 - Modernize Gradle, SDK levels, permissions, and dependencies in a dedicated pass
 
@@ -53,9 +53,9 @@ Canonical security policy and reporting:
 - [`SECURITY.md`](SECURITY.md)
 
 Typed text may be personal. Changes should avoid logging user text or sending it
-to undocumented services.
+to hard-coded or undocumented services.
 
-Remote TTS behavior should use HTTPS, clear endpoints, and failure handling.
+Platform speech behavior should handle unavailable engines and lifecycle stops.
 Generated audio files and local paths should not be committed.
 Auto Backup should remain disabled unless the app gains documented local data
 that is safe to restore across devices.

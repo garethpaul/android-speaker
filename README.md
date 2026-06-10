@@ -7,8 +7,8 @@
 
 `garethpaul/android-speaker` is an Android application or sample. A speaking Android App
 
-This legacy Android sample turns typed text into spoken audio using a remote
-text-to-speech endpoint.
+This legacy Android sample turns typed text into spoken audio using Android's
+platform `TextToSpeech` engine.
 
 This README is based on the checked-in source, manifests, scripts, and repository metadata on the `master` branch. The project language mix found during review was: Java (2), shell (1).
 
@@ -65,12 +65,13 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make check` - runs the aggregate lint, test, and build gates.
 - `scripts/check-baseline.sh` - runs SDK-free source baseline checks.
 - GitHub Actions runs `make check` through `.github/workflows/check.yml` on
-  pushes, pull requests, and manual dispatches.
-- Local Gradle checks require an explicit `ANDROID_HOME`; CI clears ambient SDK
-  variables to preserve the documented static-only boundary.
-- The SDK-free baseline protects input normalization, URL encoding, async media
-  preparation, playback failure handling, completion cleanup, and resource
-  hygiene.
+  pushes, pull requests, and manual dispatches. The workflow uses Ubuntu 24.04
+  and cancels superseded runs.
+- Local Gradle checks accept `ANDROID_HOME` or `ANDROID_SDK_ROOT`; CI clears
+  both variables to preserve the documented static-only boundary.
+- The SDK-free baseline protects input normalization, platform engine
+  initialization, utterance failure handling, lifecycle cleanup, privacy, and
+  resource hygiene.
 - `./gradlew lint --no-daemon`, `./gradlew test --no-daemon`, and `./gradlew assembleDebug --no-daemon` when the Android SDK is configured.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
@@ -80,7 +81,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - No required secret or credential file was identified in the repository scan. If you add integrations later, keep secrets out of git.
 - This legacy Android baseline pins Android build-tools 24.0.3 and Android Gradle Plugin 1.1.0.
 - Speech input is trimmed, must be non-empty, and is capped at 200 characters
-  before constructing the remote TTS URL.
+  in both the layout and dispatch path.
 - Startup checks that the required speech controls are available before wiring
   playback actions.
 
@@ -93,27 +94,26 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Auto Backup disabled is part of the privacy baseline because the app has no
   documented restore behavior for user-entered speech text or generated
   playback state.
+- The app uses the device's configured platform `TextToSpeech` engine and does
+  not request the `INTERNET` permission. Engine-specific privacy behavior is
+  controlled by the device and selected engine rather than a hard-coded app
+  endpoint.
 
 ## Maintenance Notes
 
 - This looks like a legacy Android project or sample. Expect Android SDK, Gradle, and support-library versions to matter.
-- The current baseline URL-encodes text before calling the TTS endpoint, uses an
-  HTTPS request URL, avoids logging user-entered text, and removes the unused
-  external-storage download path.
-- Remote media playback uses asynchronous media preparation so the UI thread
-  does not block while the remote audio stream is prepared, and completed
-  playback releases its active `MediaPlayer`.
-- Active speech playback is released when the activity pauses so remote audio
-  does not continue after the UI leaves the foreground.
-- Stale MediaPlayer callbacks are ignored so older preparation, completion, or
-  failure events cannot affect a newer playback request.
+- The current baseline avoids logging user-entered text and delegates speech to
+  the platform `TextToSpeech` engine instead of an undocumented remote URL.
+- The play control remains disabled until the engine and US English voice are
+  available. Stale utterance callbacks are ignored.
+- The activity stops active speech when the activity pauses and shuts down the
+  engine when the activity is destroyed.
 - It also uses HTTPS Maven Central for build resolution. `app/lint.xml`
   suppresses only the obsolete lint API database error from this old toolchain
   and the missing-density-folder warning for the bitmap asset intentionally kept
   in `drawable-nodpi`.
-- Future work should replace the remote TTS call with platform `TextToSpeech`
-  or a documented provider, add media playback tests, modernize SDK levels, and
-  verify runtime behavior on an emulator or device.
+- Future work should add platform speech tests, modernize SDK levels, and verify
+  runtime behavior on an emulator or device with multiple installed engines.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 - See `docs/plans/2026-06-09-speaker-playback-completion-cleanup.md` for the
@@ -129,6 +129,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `docs/plans/2026-06-09-speaker-pause-release.md` for the pause-time
   playback release contract.
 - See `docs/plans/2026-06-10-ci-baseline.md` for the GitHub Actions baseline.
+- See `docs/plans/2026-06-10-platform-text-to-speech.md` for the supported
+  platform speech migration.
 
 ## Contributing
 
