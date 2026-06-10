@@ -25,6 +25,7 @@ Priority:
 - Disable playback until platform speech initialization succeeds
 - Stop active speech when the activity pauses and shut down on destroy
 - Ignore stale utterance callbacks after a newer speech request replaces them
+- Keep utterance ownership atomic across UI and speech-engine callback threads
 - Keep GitHub Actions running the root `make check` baseline before review
 - Keep user-entered speech text bounded before platform engine dispatch
 - Keep startup guarded when required speech controls are missing

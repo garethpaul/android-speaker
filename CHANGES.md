@@ -8,6 +8,8 @@
 - Disabled playback until engine initialization succeeds, ignored stale
   utterance callbacks, stopped speech on pause, and shut the engine down on
   destroy.
+- Serialized utterance ownership across UI and speech-engine callback threads
+  and suppressed stale queued playback-error messages.
 - Enforced the 200-character limit in the layout, made root checks portable,
   accepted either Android SDK variable, and pinned CI to Ubuntu 24.04 with
   superseded-run cancellation.

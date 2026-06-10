@@ -22,7 +22,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private TextToSpeech textToSpeech;
     private boolean textToSpeechReady;
     private long utteranceSequence;
-    private volatile String activeUtteranceId;
+    private String activeUtteranceId;
 
     static String normalizeSpeechText(String text) {
         if (text == null) {
@@ -81,15 +81,13 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             }
 
             @Override
-            public void onError(String utteranceId) {
-                if (!clearActiveUtterance(utteranceId)) {
-                    return;
-                }
-
+            public void onError(final String utteranceId) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        showToast(R.string.speech_playback_failed);
+                        if (clearActiveUtterance(utteranceId)) {
+                            showToast(R.string.speech_playback_failed);
+                        }
                     }
                 });
             }
@@ -118,8 +116,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             return;
         }
 
-        String utteranceId = "speaker-" + (++utteranceSequence);
-        activeUtteranceId = utteranceId;
+        String utteranceId = beginUtterance();
         int result = engine.speak(speechText, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
         if (result == TextToSpeech.ERROR) {
             clearActiveUtterance(utteranceId);
@@ -136,12 +133,22 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         showToast(R.string.speech_engine_unavailable);
     }
 
-    private boolean clearActiveUtterance(String utteranceId) {
+    private synchronized String beginUtterance() {
+        String utteranceId = "speaker-" + (++utteranceSequence);
+        activeUtteranceId = utteranceId;
+        return utteranceId;
+    }
+
+    private synchronized boolean clearActiveUtterance(String utteranceId) {
         if (utteranceId == null || !utteranceId.equals(activeUtteranceId)) {
             return false;
         }
         activeUtteranceId = null;
         return true;
+    }
+
+    private synchronized void abandonActiveUtterance() {
+        activeUtteranceId = null;
     }
 
     private void showToast(int messageId) {
@@ -152,7 +159,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     @Override
     protected void onPause() {
-        activeUtteranceId = null;
+        abandonActiveUtterance();
         if (textToSpeech != null) {
             textToSpeech.stop();
         }
@@ -162,7 +169,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     @Override
     protected void onDestroy() {
         textToSpeechReady = false;
-        activeUtteranceId = null;
+        abandonActiveUtterance();
         if (textToSpeech != null) {
             textToSpeech.stop();
             textToSpeech.shutdown();

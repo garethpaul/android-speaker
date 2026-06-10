@@ -12,6 +12,7 @@ RES_DIR="$ROOT_DIR/app/src/main/res"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
 PLATFORM_TTS_PLAN="$ROOT_DIR/docs/plans/2026-06-10-platform-text-to-speech.md"
+ATOMIC_OWNERSHIP_PLAN="$ROOT_DIR/docs/plans/2026-06-10-atomic-utterance-ownership.md"
 
 if ! grep -Fq "url 'https://repo1.maven.org/maven2'" "$ROOT_BUILD"; then
   printf '%s\n' "Build repositories must use HTTPS Maven Central." >&2
@@ -113,8 +114,12 @@ for tts_contract in \
   "playButton.setEnabled(false)" \
   "playButton.setEnabled(true)" \
   "setOnUtteranceProgressListener" \
+  "private synchronized String beginUtterance()" \
+  "private synchronized boolean clearActiveUtterance(String utteranceId)" \
+  "private synchronized void abandonActiveUtterance()" \
   "clearActiveUtterance(utteranceId)" \
   'String utteranceId = "speaker-" + (++utteranceSequence)' \
+  "String utteranceId = beginUtterance()" \
   "engine.speak(speechText, TextToSpeech.QUEUE_FLUSH, null, utteranceId)" \
   "if (result == TextToSpeech.ERROR)" \
   "textToSpeech.stop()" \
@@ -124,6 +129,17 @@ for tts_contract in \
     exit 1
   fi
 done
+
+if grep -Fq "volatile String activeUtteranceId" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Utterance ownership must use atomic transitions rather than a volatile check-then-clear." >&2
+  exit 1
+fi
+
+if ! grep -Fq "public void onError(final String utteranceId)" "$MAIN_ACTIVITY" || \
+   ! grep -Fq "if (clearActiveUtterance(utteranceId))" "$MAIN_ACTIVITY"; then
+  printf '%s\n' "Playback errors must recheck utterance ownership on the UI thread." >&2
+  exit 1
+fi
 
 if [ "$(grep -Fc "playButton.setEnabled(false);" "$MAIN_ACTIVITY")" -lt 2 ]; then
   printf '%s\n' "Playback must stay disabled before initialization and after engine failure." >&2
@@ -313,6 +329,11 @@ if ! grep -Fq "stops active speech when the activity pauses" "$README"; then
   exit 1
 fi
 
+if ! grep -Fq "Utterance ownership transitions are synchronized" "$README"; then
+  printf '%s\n' "README must document atomic utterance ownership." >&2
+  exit 1
+fi
+
 if ! grep -Fq "make check" "$ROOT_DIR/docs/plans/2026-06-09-speaker-startup-control-guard.md"; then
   printf '%s\n' "Speaker startup control guard plan must document make check verification." >&2
   exit 1
@@ -371,6 +392,17 @@ fi
 
 if ! grep -Fq "Status: Completed" "$PLATFORM_TTS_PLAN" || ! grep -Fq "make check" "$PLATFORM_TTS_PLAN"; then
   printf '%s\n' "Platform text-to-speech plan must record completed status and make check verification." >&2
+  exit 1
+fi
+
+if [ ! -f "$ATOMIC_OWNERSHIP_PLAN" ]; then
+  printf '%s\n' "Atomic utterance ownership plan is missing." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Status: Completed" "$ATOMIC_OWNERSHIP_PLAN" || \
+   ! grep -Fq "make check" "$ATOMIC_OWNERSHIP_PLAN"; then
+  printf '%s\n' "Atomic utterance ownership plan must record completed status and make check verification." >&2
   exit 1
 fi
 

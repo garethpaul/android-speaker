@@ -108,6 +108,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
   available. Stale utterance callbacks are ignored.
 - The activity stops active speech when the activity pauses and shuts down the
   engine when the activity is destroyed.
+- Utterance ownership transitions are synchronized across UI and engine
+  callback threads, and playback errors are revalidated on the UI thread before
+  notifying the user.
 - It also uses HTTPS Maven Central for build resolution. `app/lint.xml`
   suppresses only the obsolete lint API database error from this old toolchain
   and the missing-density-folder warning for the bitmap asset intentionally kept
