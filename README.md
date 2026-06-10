@@ -64,6 +64,10 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make build` - runs debug assembly when the Android SDK is configured.
 - `make check` - runs the aggregate lint, test, and build gates.
 - `scripts/check-baseline.sh` - runs SDK-free source baseline checks.
+- GitHub Actions runs `make check` through `.github/workflows/check.yml` on
+  pushes, pull requests, and manual dispatches.
+- Local Gradle checks require an explicit `ANDROID_HOME`; CI clears ambient SDK
+  variables to preserve the documented static-only boundary.
 - The SDK-free baseline protects input normalization, URL encoding, async media
   preparation, playback failure handling, completion cleanup, and resource
   hygiene.
@@ -124,6 +128,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
   stale MediaPlayer callback guard.
 - See `docs/plans/2026-06-09-speaker-pause-release.md` for the pause-time
   playback release contract.
+- See `docs/plans/2026-06-10-ci-baseline.md` for the GitHub Actions baseline.
 
 ## Contributing
 

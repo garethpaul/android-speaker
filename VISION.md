@@ -26,6 +26,7 @@ Priority:
 - Route media startup security failures through the same playback cleanup path
 - Release active speech playback when the activity pauses
 - Ignore stale media callbacks after a newer playback request replaces them
+- Keep GitHub Actions running the root `make check` baseline before review
 - Keep user-entered speech text bounded before remote TTS requests
 - Keep startup guarded when required speech controls are missing
 
@@ -41,6 +42,8 @@ Contribution rules:
 - One PR = one focused media, network, or build change.
 - Keep user-entered text handling explicit and documented.
 - Verify playback behavior on a device or emulator for media changes.
+- Keep `.github/workflows/check.yml` aligned with the documented `make check`
+  wrapper.
 - Avoid new dependencies unless they simplify or secure the sample.
 
 ## Security And Privacy

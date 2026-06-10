@@ -11,6 +11,8 @@ README="$ROOT_DIR/README.md"
 RES_DIR="$ROOT_DIR/app/src/main/res"
 PAUSE_RELEASE_PLAN="$ROOT_DIR/docs/plans/2026-06-09-speaker-pause-release.md"
 MEDIA_SECURITY_PLAN="$ROOT_DIR/docs/plans/2026-06-09-speaker-media-security-exception.md"
+CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
+CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
 
 if ! grep -Fq "url 'https://repo1.maven.org/maven2'" "$ROOT_BUILD"; then
   printf '%s\n' "Build repositories must use HTTPS Maven Central." >&2
@@ -335,6 +337,11 @@ if ! grep -Fq "make check" "$README"; then
   exit 1
 fi
 
+if ! grep -Fq "GitHub Actions" "$README"; then
+  printf '%s\n' "README must document the GitHub Actions baseline." >&2
+  exit 1
+fi
+
 if ! grep -Fq "asynchronous media preparation" "$README"; then
   printf '%s\n' "README must document asynchronous media preparation." >&2
   exit 1
@@ -382,6 +389,41 @@ fi
 
 if ! grep -Fq "make check" "$MEDIA_SECURITY_PLAN"; then
   printf '%s\n' "Speaker media security-exception plan must document make check verification." >&2
+  exit 1
+fi
+
+if [ ! -f "$CI_WORKFLOW" ]; then
+  printf '%s\n' "GitHub Actions check workflow is missing." >&2
+  exit 1
+fi
+
+for workflow_contract in \
+  "permissions:" \
+  "contents: read" \
+  "timeout-minutes: 5" \
+  "workflow_dispatch:" \
+  "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" \
+  'ANDROID_HOME: ""' \
+  'ANDROID_SDK_ROOT: ""' \
+  "run: make check"; do
+  if ! grep -Fq "$workflow_contract" "$CI_WORKFLOW"; then
+    printf '%s\n' "GitHub Actions check workflow must keep contract: $workflow_contract" >&2
+    exit 1
+  fi
+done
+
+if grep -Fq "/home/gjones" "$ROOT_DIR/Makefile"; then
+  printf '%s\n' "Makefile must not embed a maintainer-specific Android SDK path." >&2
+  exit 1
+fi
+
+if [ ! -f "$CI_PLAN" ]; then
+  printf '%s\n' "Speaker CI baseline plan is missing." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Status: Completed" "$CI_PLAN" || ! grep -Fq "make check" "$CI_PLAN"; then
+  printf '%s\n' "Speaker CI baseline plan must record completed status and make check verification." >&2
   exit 1
 fi
 
