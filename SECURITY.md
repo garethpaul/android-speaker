@@ -36,6 +36,8 @@ Helpful reports include:
   before review without inheriting hosted Android SDK state or persisted
   checkout credentials. The SDK-free baseline requires this to remain the only
   workflow and match its canonical contract exactly.
+- The baseline pins and verifies the wrapper JAR and Gradle distribution checksums.
+  An uncached bootstrap still depends on Gradle's HTTPS service.
 - CODEOWNERS covers workflows, verification entry points, and the complete app
   tree. The baseline scans every app source-set manifest and Java or Kotlin
   source file for restored network permission or app-controlled remote speech.
@@ -53,6 +55,9 @@ Helpful reports include:
 If this project requests device permissions such as location, camera, microphone, contacts, Bluetooth, health data, or local storage access, reports should describe the permission involved and whether sensitive data can be accessed, persisted, or transmitted unexpectedly. Please avoid testing against real third-party user data or accounts you do not control.
 
 ## Dependency and Supply Chain Security
+
+The generated Gradle 8.14.5 bootstrap retains the legacy Gradle 2.2.1 runtime
+required by Android Gradle Plugin 1.1.0. Review all four wrapper files together.
 
 Dependency updates should come from trusted package managers and should keep lockfiles in sync when lockfiles exist. Do not commit credentials, private keys, tokens, generated secrets, or machine-local configuration. If a vulnerability depends on a compromised package, typosquatting risk, insecure transitive dependency, or unsafe build step, include the package name, affected version, and the path through which it is used.
 
