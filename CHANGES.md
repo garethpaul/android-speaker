@@ -4,6 +4,8 @@
 
 - Promoted CI to the complete API 22 lint, unit-test, assembly, and structured
   merged-manifest privacy gate with deterministic legacy resource processing.
+- Released the platform text-to-speech engine immediately when engine or
+  language initialization fails instead of retaining unusable native resources.
 
 ## 2026-06-10
 

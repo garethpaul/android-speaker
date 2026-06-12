@@ -21,6 +21,7 @@ CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
 LINT_CONFIG="$ROOT_DIR/app/lint.xml"
 MERGED_MANIFEST_CHECK="$ROOT_DIR/scripts/check_merged_manifest.py"
 MERGED_MANIFEST_TEST="$ROOT_DIR/scripts/test_check_merged_manifest.py"
+INIT_FAILURE_CLEANUP_PLAN="$ROOT_DIR/docs/plans/2026-06-12-speaker-initialization-failure-cleanup.md"
 
 if ! grep -Fq "url 'https://repo1.maven.org/maven2'" "$ROOT_BUILD"; then
   printf '%s\n' "Build repositories must use HTTPS Maven Central." >&2
@@ -317,6 +318,28 @@ if [ "$(grep -Fc "clearActiveUtterance(utteranceId)" "$MAIN_ACTIVITY")" -lt 3 ];
   exit 1
 fi
 
+INIT_FAILURE_HANDLER=$(sed -n \
+  '/private void handleEngineInitializationFailure()/,/private synchronized String beginUtterance()/p' \
+  "$MAIN_ACTIVITY")
+for failure_cleanup_contract in \
+  "TextToSpeech engine = textToSpeech;" \
+  "textToSpeech = null;" \
+  "if (engine != null)" \
+  "engine.stop();" \
+  "engine.shutdown();"; do
+  if ! printf '%s\n' "$INIT_FAILURE_HANDLER" | grep -Fq "$failure_cleanup_contract"; then
+    printf '%s\n' "Speaker initialization failure cleanup is missing: $failure_cleanup_contract" >&2
+    exit 1
+  fi
+done
+
+if [ ! -f "$INIT_FAILURE_CLEANUP_PLAN" ] || \
+   ! grep -Fq "Status: Completed" "$INIT_FAILURE_CLEANUP_PLAN" || \
+   ! grep -Fq "make check" "$INIT_FAILURE_CLEANUP_PLAN"; then
+  printf '%s\n' "Speaker initialization failure cleanup plan must record completed make check verification." >&2
+  exit 1
+fi
+
 if grep -Fq "android.permission.INTERNET" "$MANIFEST"; then
   printf '%s\n' "Platform text-to-speech must not request network access." >&2
   exit 1
@@ -549,6 +572,11 @@ if ! grep -Fq "Utterance ownership transitions are synchronized" "$README"; then
   exit 1
 fi
 
+if ! grep -Fq "Failed speech-engine initialization releases the engine immediately" "$README"; then
+  printf '%s\n' "README must document initialization failure cleanup." >&2
+  exit 1
+fi
+
 if ! grep -Fq "make check" "$ROOT_DIR/docs/plans/2026-06-09-speaker-startup-control-guard.md"; then
   printf '%s\n' "Speaker startup control guard plan must document make check verification." >&2
   exit 1
@@ -617,7 +645,7 @@ if [ ! -f "$HOSTED_ANDROID_PLAN" ] || \
    ! grep -Fq "Status: Implementation Complete; Hosted Verification Pending" "$HOSTED_ANDROID_PLAN" || \
    ! grep -Fq "merged debug manifest" "$HOSTED_ANDROID_PLAN" || \
    ! grep -Fq "with zero lint issues, six parser unit" "$HOSTED_ANDROID_PLAN" || \
-   ! grep -Fq "24 focused hostile workflow" "$HOSTED_ANDROID_PLAN" || \
+   ! grep -Fq "25 focused hostile workflow" "$HOSTED_ANDROID_PLAN" || \
    ! grep -Fq "Exact-head hosted verification pending" "$HOSTED_ANDROID_PLAN"; then
   printf '%s\n' "Hosted Android verification plan must record implementation status and built-manifest boundary." >&2
   exit 1

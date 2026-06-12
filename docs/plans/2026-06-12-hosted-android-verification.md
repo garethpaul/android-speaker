@@ -34,7 +34,7 @@ manifest while preserving platform TextToSpeech behavior and trust boundaries.
   tests, both Gradle unit-test variants, debug assembly, and merged-manifest
   privacy verification.
 - Passed the complete gate from a fresh external clone.
-- Confirmed 24 focused hostile workflow, Gradle, lint, manifest, Makefile,
+- Confirmed 25 focused hostile workflow, Gradle, lint, manifest, Makefile,
   ownership, checker, documentation, and plan-status mutations are rejected.
 - Passed `git diff --check`.
 - Exact-head hosted verification pending after the implementation push.
