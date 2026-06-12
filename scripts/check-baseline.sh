@@ -6,11 +6,14 @@ MAIN_ACTIVITY="$ROOT_DIR/app/src/main/java/garethpaul/com/androidspeaker/MainAct
 APP_BUILD="$ROOT_DIR/app/build.gradle"
 MANIFEST="$ROOT_DIR/app/src/main/AndroidManifest.xml"
 ROOT_BUILD="$ROOT_DIR/build.gradle"
+SETTINGS_GRADLE="$ROOT_DIR/settings.gradle"
+GRADLE_PROPERTIES="$ROOT_DIR/gradle.properties"
+WRAPPER_PROPERTIES="$ROOT_DIR/gradle/wrapper/gradle-wrapper.properties"
 LAYOUT="$ROOT_DIR/app/src/main/res/layout/activity_main.xml"
 README="$ROOT_DIR/README.md"
 RES_DIR="$ROOT_DIR/app/src/main/res"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
-CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
+CODEOWNERS="$ROOT_DIR/.github/CODEOWNERS"
 PLATFORM_TTS_PLAN="$ROOT_DIR/docs/plans/2026-06-10-platform-text-to-speech.md"
 ATOMIC_OWNERSHIP_PLAN="$ROOT_DIR/docs/plans/2026-06-10-atomic-utterance-ownership.md"
 
@@ -36,6 +39,156 @@ fi
 
 if grep -Eq 'translate_tts|MediaPlayer|URLEncoder|setDataSource|prepareAsync' "$MAIN_ACTIVITY"; then
   printf '%s\n' "Speaker playback must not restore the undocumented remote media path." >&2
+  exit 1
+fi
+
+if find "$ROOT_DIR/app/src" -type f \( -name '*.java' -o -name '*.kt' \) \
+  -exec grep -E 'translate_tts|TTS_ENDPOINT|MediaPlayer|URLEncoder|setDataSource|prepareAsync' {} + | grep -q .; then
+  printf '%s\n' "Android source sets must not restore an app-controlled remote speech path." >&2
+  exit 1
+fi
+
+if find "$ROOT_DIR/app/src" -type f \( -name '*.java' -o -name '*.kt' \) \
+  -exec grep -E 'java\.net|android\.net|HttpURLConnection|URLConnection|Socket|WebView|org\.apache\.http|okhttp|retrofit' {} + | grep -q .; then
+  printf '%s\n' "Android source sets must not add direct network clients." >&2
+  exit 1
+fi
+
+if [ -d "$ROOT_DIR/app/libs" ] && \
+  find "$ROOT_DIR/app/libs" -type f \( -name '*.jar' -o -name '*.aar' \) -print | grep -q .; then
+  printf '%s\n' "Local Android binary dependencies are outside the auditable source baseline." >&2
+  exit 1
+fi
+
+expected_dependencies="    compile fileTree(dir: 'libs', include: ['*.jar'])"
+actual_dependencies=$(sed -n '/^dependencies {$/,/^}$/p' "$APP_BUILD" | sed '1d;$d' | sed '/^[[:space:]]*$/d')
+if [ "$actual_dependencies" != "$expected_dependencies" ]; then
+  printf '%s\n' "Android dependencies must remain at the audited legacy baseline." >&2
+  exit 1
+fi
+
+expected_gradle_paths=$(printf '%s\n' \
+  "$APP_BUILD" \
+  "$ROOT_BUILD" \
+  "$GRADLE_PROPERTIES" \
+  "$WRAPPER_PROPERTIES" \
+  "$SETTINGS_GRADLE" | LC_ALL=C sort)
+actual_gradle_paths=$(find "$ROOT_DIR" \
+  -path "$ROOT_DIR/.git" -prune -o \
+  -path "$ROOT_DIR/app/build" -prune -o \
+  -type f \( -name '*.gradle' -o -name 'gradle.properties' -o -name 'gradle-wrapper.properties' \) \
+  -print | LC_ALL=C sort)
+if [ "$actual_gradle_paths" != "$expected_gradle_paths" ]; then
+  printf '%s\n' "The fixed legacy build must not add executable Gradle configuration." >&2
+  exit 1
+fi
+
+expected_root_build=$(cat <<'EOF'
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    repositories {
+        maven {
+            url 'https://repo1.maven.org/maven2'
+        }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:1.1.0'
+
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        maven {
+            url 'https://repo1.maven.org/maven2'
+        }
+    }
+}
+EOF
+)
+if [ "$(cat "$ROOT_BUILD")" != "$expected_root_build" ]; then
+  printf '%s\n' "Root Gradle configuration must match the audited legacy baseline." >&2
+  exit 1
+fi
+
+expected_app_build=$(cat <<'EOF'
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 22
+    buildToolsVersion "24.0.3"
+
+    defaultConfig {
+        applicationId "garethpaul.com.androidspeaker"
+        minSdkVersion 21
+        targetSdkVersion 22
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+}
+EOF
+)
+if [ "$(cat "$APP_BUILD")" != "$expected_app_build" ]; then
+  printf '%s\n' "App Gradle configuration must match the audited legacy baseline." >&2
+  exit 1
+fi
+
+if [ "$(cat "$SETTINGS_GRADLE")" != "include ':app'" ]; then
+  printf '%s\n' "Gradle settings must keep the single audited app module." >&2
+  exit 1
+fi
+
+expected_gradle_properties=$(cat <<'EOF'
+# Project-wide Gradle settings.
+
+# IDE (e.g. Android Studio) users:
+# Gradle settings configured through the IDE *will override*
+# any settings specified in this file.
+
+# For more details on how to configure your build environment visit
+# http://www.gradle.org/docs/current/userguide/build_environment.html
+
+# Specifies the JVM arguments used for the daemon process.
+# The setting is particularly useful for tweaking memory settings.
+# Default value: -Xmx10248m -XX:MaxPermSize=256m
+# org.gradle.jvmargs=-Xmx2048m -XX:MaxPermSize=512m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+
+# When configured, Gradle will run in incubating parallel mode.
+# This option should only be used with decoupled projects. More details, visit
+# http://www.gradle.org/docs/current/userguide/multi_project_builds.html#sec:decoupled_projects
+# org.gradle.parallel=true
+EOF
+)
+if [ "$(cat "$GRADLE_PROPERTIES")" != "$expected_gradle_properties" ]; then
+  printf '%s\n' "Gradle properties must match the audited legacy baseline." >&2
+  exit 1
+fi
+
+expected_wrapper_properties=$(cat <<'EOF'
+#Wed Apr 10 15:27:10 PDT 2013
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-2.2.1-all.zip
+EOF
+)
+if [ "$(cat "$WRAPPER_PROPERTIES")" != "$expected_wrapper_properties" ]; then
+  printf '%s\n' "Gradle wrapper properties must match the audited legacy baseline." >&2
   exit 1
 fi
 
@@ -153,6 +306,18 @@ fi
 
 if grep -Fq "android.permission.INTERNET" "$MANIFEST"; then
   printf '%s\n' "Platform text-to-speech must not request network access." >&2
+  exit 1
+fi
+
+if find "$ROOT_DIR/app/src" -type f -name 'AndroidManifest.xml' \
+  -exec grep -F "android.permission.INTERNET" {} + | grep -q .; then
+  printf '%s\n' "Android source-set manifests must not request network access." >&2
+  exit 1
+fi
+
+if find "$ROOT_DIR/app/src" -type f -name 'AndroidManifest.xml' \
+  -exec grep -E '&#[xX]?[0-9A-Fa-f]+;' {} + | grep -q .; then
+  printf '%s\n' "Android manifests must not obscure permission names with numeric entities." >&2
   exit 1
 fi
 
@@ -344,22 +509,69 @@ if [ ! -f "$CI_WORKFLOW" ]; then
   exit 1
 fi
 
-for workflow_contract in \
-  "permissions:" \
-  "contents: read" \
-  "runs-on: ubuntu-24.04" \
-  "cancel-in-progress: true" \
-  "timeout-minutes: 5" \
-  "workflow_dispatch:" \
-  "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" \
-  'ANDROID_HOME: ""' \
-  'ANDROID_SDK_ROOT: ""' \
-  "run: make check"; do
-  if ! grep -Fq "$workflow_contract" "$CI_WORKFLOW"; then
-    printf '%s\n' "GitHub Actions check workflow must keep contract: $workflow_contract" >&2
-    exit 1
-  fi
-done
+workflow_paths=$(find "$ROOT_DIR/.github/workflows" -type f \( -name '*.yml' -o -name '*.yaml' \) -print | LC_ALL=C sort)
+if [ "$workflow_paths" != "$CI_WORKFLOW" ]; then
+  printf '%s\n' "The canonical check workflow must be the only GitHub Actions workflow." >&2
+  exit 1
+fi
+
+expected_ci_workflow=$(cat <<'EOF'
+name: Check
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Run baseline
+        run: make check
+        env:
+          ANDROID_HOME: ""
+          ANDROID_SDK_ROOT: ""
+EOF
+)
+if [ "$(cat "$CI_WORKFLOW")" != "$expected_ci_workflow" ]; then
+  printf '%s\n' "GitHub Actions check workflow must match the canonical credential-free contract." >&2
+  exit 1
+fi
+
+expected_codeowners=$(cat <<'EOF'
+/.github/CODEOWNERS @garethpaul
+/.github/workflows/ @garethpaul
+/Makefile @garethpaul
+/scripts/check-baseline.sh @garethpaul
+/build.gradle @garethpaul
+/settings.gradle @garethpaul
+/gradle.properties @garethpaul
+/gradle/ @garethpaul
+/gradlew @garethpaul
+/gradlew.bat @garethpaul
+/app/ @garethpaul
+EOF
+)
+if [ ! -f "$CODEOWNERS" ] || [ "$(cat "$CODEOWNERS")" != "$expected_codeowners" ]; then
+  printf '%s\n' "CODEOWNERS must protect the CI and Android privacy boundaries." >&2
+  exit 1
+fi
 
 for make_contract in \
   'ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))' \
@@ -372,16 +584,6 @@ done
 
 if grep -Fq "/home/gjones" "$ROOT_DIR/Makefile"; then
   printf '%s\n' "Makefile must not embed a maintainer-specific Android SDK path." >&2
-  exit 1
-fi
-
-if [ ! -f "$CI_PLAN" ]; then
-  printf '%s\n' "Speaker CI baseline plan is missing." >&2
-  exit 1
-fi
-
-if ! grep -Fq "Status: Completed" "$CI_PLAN" || ! grep -Fq "make check" "$CI_PLAN"; then
-  printf '%s\n' "Speaker CI baseline plan must record completed status and make check verification." >&2
   exit 1
 fi
 

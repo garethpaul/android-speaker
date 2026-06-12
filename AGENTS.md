@@ -32,7 +32,7 @@
 
 ## Testing guidance
 
-- No dedicated test files were detected; treat `make check` as the minimum baseline.
+- A legacy instrumentation smoke test exists, but there is no substantive behavioral test suite; treat `make check` as the minimum baseline.
 - Start with the narrowest relevant test or Make target, then run `make check` before handing off if the change is not documentation-only.
 - Keep README verification notes in sync when commands, fixtures, or supported toolchains change.
 
@@ -47,7 +47,8 @@
 
 - No required secret or credential file was identified in the repository scan. If you add integrations later, keep secrets out of git.
 - This legacy Android baseline pins Android build-tools 24.0.3 and Android Gradle Plugin 1.1.0.
-- Speech input is trimmed, must be non-empty, and is capped at 200 characters before constructing the remote TTS URL.
+- Speech input is trimmed, must be non-empty, and is capped at 200 characters before dispatch to the platform `TextToSpeech` engine.
+- The app does not request `INTERNET`; preserve engine readiness checks, `QUEUE_FLUSH`, synchronized utterance ownership, stale-callback rejection, and pause/destroy cleanup.
 - Startup checks that the required speech controls are available before wiring playback actions.
 - Auto Backup disabled is part of the privacy baseline because the app has no documented restore behavior for user-entered speech text or generated playback state.
 - This looks like a legacy Android project or sample. Expect Android SDK, Gradle, and support-library versions to matter.
