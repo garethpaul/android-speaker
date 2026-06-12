@@ -27,6 +27,7 @@ Priority:
 - Ignore stale utterance callbacks after a newer speech request replaces them
 - Keep utterance ownership atomic across UI and speech-engine callback threads
 - Keep GitHub Actions running the root `make check` baseline before review
+- Keep the legacy Gradle runtime behind a checksum-verified generated wrapper
 - Keep user-entered speech text bounded before platform engine dispatch
 - Keep startup guarded when required speech controls are missing
 
@@ -36,7 +37,8 @@ Next priorities:
   of the app
 - Remove obsolete storage assumptions
 - Add tests or manual verification notes for playback behavior
-- Modernize Gradle, SDK levels, permissions, and dependencies in a dedicated pass
+- Evaluate Gradle runtime, SDK, permissions, and dependency modernization
+  together in a dedicated compatibility pass; wrapper hardening is separate
 
 Contribution rules:
 
