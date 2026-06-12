@@ -62,13 +62,13 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make lint` - runs the SDK-free baseline and Gradle lint when the Android SDK is configured.
 - `make test` - runs Gradle tests when the Android SDK is configured.
 - `make build` - runs debug assembly when the Android SDK is configured.
-- `make check` - runs the aggregate lint, test, and build gates.
+- `make manifest` - assembles and validates the merged debug manifest when the Android SDK is configured.
+- `make check` - runs the aggregate lint, test, build, and merged-manifest gates.
 - `scripts/check-baseline.sh` - runs SDK-free source baseline checks.
-- GitHub Actions runs `make check` through `.github/workflows/check.yml` on
-  pushes, pull requests, and manual dispatches. The workflow uses Ubuntu 24.04
-  and cancels superseded runs.
-- Local Gradle checks accept `ANDROID_HOME` or `ANDROID_SDK_ROOT`; CI clears
-  both variables to preserve the documented static-only boundary.
+- GitHub Actions installs Android API 22 and build-tools 24.0.3 under Java 8,
+  then runs the complete `make check` gate on pushes, pull requests, and manual
+  dispatches. The workflow uses Ubuntu 24.04 and cancels superseded runs.
+- Local Gradle checks accept `ANDROID_HOME` or `ANDROID_SDK_ROOT`.
 - The SDK-free baseline protects input normalization, platform engine
   initialization, utterance failure handling, lifecycle cleanup, privacy, and
   resource hygiene.
@@ -114,9 +114,12 @@ When the required SDK or runtime is unavailable, use static checks and source re
   callback threads, and playback errors are revalidated on the UI thread before
   notifying the user.
 - It also uses HTTPS Maven Central for build resolution. `app/lint.xml`
-  suppresses only the obsolete lint API database error from this old toolchain
-  and the missing-density-folder warning for the bitmap asset intentionally kept
-  in `drawable-nodpi`.
+  suppresses the obsolete lint API database error, the missing-density-folder
+  warning for the bitmap asset intentionally kept in `drawable-nodpi`, and the
+  deliberately deferred target-SDK modernization warning. All other lint
+  warnings fail the build.
+- The merged-manifest gate verifies package and SDK identity, backup opt-out,
+  launcher wiring, and absence of the `INTERNET` permission in the built app.
 - Future work should add platform speech tests, modernize SDK levels, and verify
   runtime behavior on an emulator or device with multiple installed engines.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.

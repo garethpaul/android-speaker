@@ -2,6 +2,8 @@
 
 ## 2026-06-12
 
+- Promoted CI to the complete API 22 lint, unit-test, assembly, and structured
+  merged-manifest privacy gate with deterministic legacy resource processing.
 - Released the platform text-to-speech engine immediately when engine or
   language initialization fails instead of retaining unusable native resources.
 
@@ -20,8 +22,17 @@
   superseded-run cancellation.
 - Added a pinned, read-only GitHub Actions check workflow that runs the existing
   `make check` baseline with a bounded timeout and explicit SDK-free execution.
-- Added an SDK-free guard requiring the CI workflow and completed CI baseline
-  plan to remain checked in.
+- Disabled persisted checkout credentials, added CODEOWNERS for CI and the
+  complete Android app tree, and made the SDK-free guard require one exact
+  canonical workflow instead of bypassable substring matches.
+- Extended privacy checks across alternate Android source sets so debug or
+  flavor code cannot restore network permission or remote speech unnoticed.
+- Rejected encoded permission names, direct network clients, unaudited
+  dependency declarations, and local Android binary dependencies.
+- Locked the fixed legacy Gradle configuration and module inventory against
+  source-set redirection or cross-project dependency injection.
+- Removed an inaccurate generated device preview that did not represent the
+  application UI.
 - Removed the maintainer-specific Android SDK path from the Makefile.
 
 ## 2026-06-09
