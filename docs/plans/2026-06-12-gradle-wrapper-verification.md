@@ -96,5 +96,9 @@ exercise focused mutations, and require final Check and CodeQL success.
 
 ## Hosted Verification
 
-Hosted pull-request and CodeQL evidence will be recorded after the exact
-implementation head completes both canonical checks.
+- On implementation head `6fe86e22a4d0e256b3176f0d212ccaf2a9417c31`,
+  pull-request `Check` run `27441161511` passed the complete Java 8/API 22 and
+  merged-manifest privacy gate.
+- CodeQL run `27441160498` passed both the actions and java-kotlin analyzers.
+- PR #4 was open and mergeable at that head. The final evidence-only commit
+  must rerun both gates before tracker reconciliation.
