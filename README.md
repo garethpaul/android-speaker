@@ -108,6 +108,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   available. Stale utterance callbacks are ignored.
 - The activity stops active speech when the activity pauses and shuts down the
   engine when the activity is destroyed.
+- Failed speech-engine initialization releases the engine immediately while
+  leaving playback disabled and the activity responsive.
 - Utterance ownership transitions are synchronized across UI and engine
   callback threads, and playback errors are revalidated on the UI thread before
   notifying the user.

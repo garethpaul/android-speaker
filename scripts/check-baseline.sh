@@ -13,6 +13,7 @@ CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
 PLATFORM_TTS_PLAN="$ROOT_DIR/docs/plans/2026-06-10-platform-text-to-speech.md"
 ATOMIC_OWNERSHIP_PLAN="$ROOT_DIR/docs/plans/2026-06-10-atomic-utterance-ownership.md"
+INIT_FAILURE_CLEANUP_PLAN="$ROOT_DIR/docs/plans/2026-06-12-speaker-initialization-failure-cleanup.md"
 
 if ! grep -Fq "url 'https://repo1.maven.org/maven2'" "$ROOT_BUILD"; then
   printf '%s\n' "Build repositories must use HTTPS Maven Central." >&2
@@ -148,6 +149,28 @@ fi
 
 if [ "$(grep -Fc "clearActiveUtterance(utteranceId)" "$MAIN_ACTIVITY")" -lt 3 ]; then
   printf '%s\n' "Speech completion, callback failure, and dispatch failure must correlate utterances." >&2
+  exit 1
+fi
+
+INIT_FAILURE_HANDLER=$(sed -n \
+  '/private void handleEngineInitializationFailure()/,/private synchronized String beginUtterance()/p' \
+  "$MAIN_ACTIVITY")
+for failure_cleanup_contract in \
+  "TextToSpeech engine = textToSpeech;" \
+  "textToSpeech = null;" \
+  "if (engine != null)" \
+  "engine.stop();" \
+  "engine.shutdown();"; do
+  if ! printf '%s\n' "$INIT_FAILURE_HANDLER" | grep -Fq "$failure_cleanup_contract"; then
+    printf '%s\n' "Speaker initialization failure cleanup is missing: $failure_cleanup_contract" >&2
+    exit 1
+  fi
+done
+
+if [ ! -f "$INIT_FAILURE_CLEANUP_PLAN" ] || \
+   ! grep -Fq "Status: Completed" "$INIT_FAILURE_CLEANUP_PLAN" || \
+   ! grep -Fq "make check" "$INIT_FAILURE_CLEANUP_PLAN"; then
+  printf '%s\n' "Speaker initialization failure cleanup plan must record completed make check verification." >&2
   exit 1
 fi
 
@@ -331,6 +354,11 @@ fi
 
 if ! grep -Fq "Utterance ownership transitions are synchronized" "$README"; then
   printf '%s\n' "README must document atomic utterance ownership." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Failed speech-engine initialization releases the engine immediately" "$README"; then
+  printf '%s\n' "README must document initialization failure cleanup." >&2
   exit 1
 fi
 

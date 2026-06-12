@@ -126,6 +126,12 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     private void handleEngineInitializationFailure() {
         textToSpeechReady = false;
+        TextToSpeech engine = textToSpeech;
+        textToSpeech = null;
+        if (engine != null) {
+            engine.stop();
+            engine.shutdown();
+        }
         if (playButton != null) {
             playButton.setEnabled(false);
         }

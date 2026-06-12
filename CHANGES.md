@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-12
+
+- Released the platform text-to-speech engine immediately when engine or
+  language initialization fails instead of retaining unusable native resources.
+
 ## 2026-06-10
 
 - Replaced the undocumented remote TTS URL and `MediaPlayer` flow with Android's
