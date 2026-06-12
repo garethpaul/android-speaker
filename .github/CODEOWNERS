@@ -1,7 +1,7 @@
 /.github/CODEOWNERS @garethpaul
 /.github/workflows/ @garethpaul
 /Makefile @garethpaul
-/scripts/check-baseline.sh @garethpaul
+/scripts/ @garethpaul
 /build.gradle @garethpaul
 /settings.gradle @garethpaul
 /gradle.properties @garethpaul

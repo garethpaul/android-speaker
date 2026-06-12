@@ -1,6 +1,6 @@
 # Hosted Android Verification
 
-## Status: Planned
+## Status: Implementation Complete; Hosted Verification Pending
 
 ## Context
 
@@ -30,12 +30,14 @@ manifest while preserving platform TextToSpeech behavior and trust boundaries.
 
 ## Verification
 
-- Run SDK-backed `make check` locally.
-- Run the complete gate from a fresh external clone.
-- Exercise focused hostile workflow, Gradle, lint, manifest, Makefile, checker,
-  documentation, and plan-status mutations.
-- Pass `git diff --check`.
-- Require exact-head hosted verification before completion.
+- Passed SDK-backed `make check` locally with zero lint issues, six parser unit
+  tests, both Gradle unit-test variants, debug assembly, and merged-manifest
+  privacy verification.
+- Passed the complete gate from a fresh external clone.
+- Confirmed 24 focused hostile workflow, Gradle, lint, manifest, Makefile,
+  ownership, checker, documentation, and plan-status mutations are rejected.
+- Passed `git diff --check`.
+- Exact-head hosted verification pending after the implementation push.
 
 ## Boundaries
 

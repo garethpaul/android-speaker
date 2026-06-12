@@ -16,6 +16,11 @@ CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 CODEOWNERS="$ROOT_DIR/.github/CODEOWNERS"
 PLATFORM_TTS_PLAN="$ROOT_DIR/docs/plans/2026-06-10-platform-text-to-speech.md"
 ATOMIC_OWNERSHIP_PLAN="$ROOT_DIR/docs/plans/2026-06-10-atomic-utterance-ownership.md"
+HOSTED_ANDROID_PLAN="$ROOT_DIR/docs/plans/2026-06-12-hosted-android-verification.md"
+CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
+LINT_CONFIG="$ROOT_DIR/app/lint.xml"
+MERGED_MANIFEST_CHECK="$ROOT_DIR/scripts/check_merged_manifest.py"
+MERGED_MANIFEST_TEST="$ROOT_DIR/scripts/test_check_merged_manifest.py"
 
 if ! grep -Fq "url 'https://repo1.maven.org/maven2'" "$ROOT_BUILD"; then
   printf '%s\n' "Build repositories must use HTTPS Maven Central." >&2
@@ -121,6 +126,14 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 22
     buildToolsVersion "24.0.3"
+
+    aaptOptions {
+        useNewCruncher false
+    }
+
+    lintOptions {
+        warningsAsErrors true
+    }
 
     defaultConfig {
         applicationId "garethpaul.com.androidspeaker"
@@ -376,8 +389,11 @@ if ! grep -Fq "build:" "$ROOT_DIR/Makefile"; then
   exit 1
 fi
 
-if ! grep -Fq "verify: lint test build" "$ROOT_DIR/Makefile"; then
-  printf '%s\n' "Makefile verify must run lint, test, and build gates." >&2
+if ! grep -Fq "manifest: build" "$ROOT_DIR/Makefile" || \
+   ! grep -Fq "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s \$(ROOT)scripts -p 'test_*.py'" "$ROOT_DIR/Makefile" || \
+   ! grep -Fq "PYTHONDONTWRITEBYTECODE=1 python3 \$(ROOT)scripts/check_merged_manifest.py" "$ROOT_DIR/Makefile" || \
+   ! grep -Fq "verify: lint test manifest" "$ROOT_DIR/Makefile"; then
+  printf '%s\n' "Makefile verify must run source, unit, Android build, and merged-manifest gates." >&2
   exit 1
 fi
 
@@ -434,13 +450,47 @@ if ! grep -Fq 'name="speech_input_required"' "$RES_DIR/values/strings.xml" || \
   exit 1
 fi
 
-if ! grep -Fq "LintError" "$ROOT_DIR/app/lint.xml"; then
+if ! grep -Fq "LintError" "$LINT_CONFIG"; then
   printf '%s\n' "lint.xml must document the obsolete lint API database limitation." >&2
   exit 1
 fi
 
-if ! grep -Fq "IconMissingDensityFolder" "$ROOT_DIR/app/lint.xml"; then
+if ! grep -Fq "IconMissingDensityFolder" "$LINT_CONFIG"; then
   printf '%s\n' "lint.xml must document the nodpi bitmap asset baseline." >&2
+  exit 1
+fi
+
+if ! grep -Fq "OldTargetApi" "$LINT_CONFIG"; then
+  printf '%s\n' "lint.xml must document the deferred target-SDK modernization boundary." >&2
+  exit 1
+fi
+
+if [ "$(grep -c '<issue id=' "$LINT_CONFIG")" -ne 3 ]; then
+  printf '%s\n' "lint.xml must keep exactly the three documented legacy suppressions." >&2
+  exit 1
+fi
+
+if [ ! -x "$MERGED_MANIFEST_CHECK" ] || [ ! -f "$MERGED_MANIFEST_TEST" ]; then
+  printf '%s\n' "Merged-manifest checker and unit tests are required." >&2
+  exit 1
+fi
+
+for manifest_contract in \
+  'root.get("package") == "garethpaul.com.androidspeaker"' \
+  'android_attribute(uses_sdk, "minSdkVersion") == "21"' \
+  'android_attribute(uses_sdk, "targetSdkVersion") == "22"' \
+  'android_attribute(application, "allowBackup") == "false"' \
+  'android.permission.INTERNET' \
+  'android.intent.action.MAIN' \
+  'android.intent.category.LAUNCHER'; do
+  if ! grep -Fq "$manifest_contract" "$MERGED_MANIFEST_CHECK"; then
+    printf '%s\n' "Merged-manifest checker must keep contract: $manifest_contract" >&2
+    exit 1
+  fi
+done
+
+if [ "$(grep -c '^    def test_' "$MERGED_MANIFEST_TEST")" -ne 6 ]; then
+  printf '%s\n' "Merged-manifest checker must keep six focused unit tests." >&2
   exit 1
 fi
 
@@ -528,6 +578,9 @@ on:
 permissions:
   contents: read
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 concurrency:
   group: check-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -535,22 +588,55 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
       - name: Check out repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
 
-      - name: Run baseline
+      - name: Install Android SDK packages
+        run: '"${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-22" "build-tools;24.0.3"'
+
+      - name: Set up Java 8
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+        with:
+          distribution: corretto
+          java-version: "8"
+
+      - name: Run full verification
         run: make check
-        env:
-          ANDROID_HOME: ""
-          ANDROID_SDK_ROOT: ""
 EOF
 )
 if [ "$(cat "$CI_WORKFLOW")" != "$expected_ci_workflow" ]; then
-  printf '%s\n' "GitHub Actions check workflow must match the canonical credential-free contract." >&2
+  printf '%s\n' "GitHub Actions check workflow must match the complete credential-free Android contract." >&2
+  exit 1
+fi
+
+if [ ! -f "$HOSTED_ANDROID_PLAN" ] || \
+   ! grep -Fq "Status: Implementation Complete; Hosted Verification Pending" "$HOSTED_ANDROID_PLAN" || \
+   ! grep -Fq "merged debug manifest" "$HOSTED_ANDROID_PLAN" || \
+   ! grep -Fq "with zero lint issues, six parser unit" "$HOSTED_ANDROID_PLAN" || \
+   ! grep -Fq "24 focused hostile workflow" "$HOSTED_ANDROID_PLAN" || \
+   ! grep -Fq "Exact-head hosted verification pending" "$HOSTED_ANDROID_PLAN"; then
+  printf '%s\n' "Hosted Android verification plan must record implementation status and built-manifest boundary." >&2
+  exit 1
+fi
+
+if [ ! -f "$CI_PLAN" ] || \
+   ! grep -Fq "Status: Completed" "$CI_PLAN" || \
+   ! grep -Fq 'complete `make check` wrapper' "$CI_PLAN" || \
+   ! grep -Fq "Android API 22 and build-tools 24.0.3" "$CI_PLAN" || \
+   ! grep -Fq "merged debug manifest" "$CI_PLAN"; then
+  printf '%s\n' "CI plan must document the complete hosted Android and merged-manifest gates." >&2
+  exit 1
+fi
+
+if ! grep -Fq "GitHub Actions installs Android API 22 and build-tools 24.0.3" "$README" || \
+   ! grep -Fq 'complete `make check` gate' "$README" || \
+   ! grep -Fq "All other lint" "$README" || \
+   ! grep -Fq "merged-manifest gate verifies" "$README"; then
+  printf '%s\n' "README must document complete hosted Android, strict lint, and merged-manifest verification." >&2
   exit 1
 fi
 
@@ -558,7 +644,7 @@ expected_codeowners=$(cat <<'EOF'
 /.github/CODEOWNERS @garethpaul
 /.github/workflows/ @garethpaul
 /Makefile @garethpaul
-/scripts/check-baseline.sh @garethpaul
+/scripts/ @garethpaul
 /build.gradle @garethpaul
 /settings.gradle @garethpaul
 /gradle.properties @garethpaul

@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-12
+
+- Promoted CI to the complete API 22 lint, unit-test, assembly, and structured
+  merged-manifest privacy gate with deterministic legacy resource processing.
+
 ## 2026-06-10
 
 - Replaced the undocumented remote TTS URL and `MediaPlayer` flow with Android's

@@ -4,28 +4,32 @@
 
 ## Context
 
-`android-speaker` has an SDK-free source baseline plus guarded Gradle lint,
-test, and build gates behind `make check`. The repository needs the same
-wrapper to run in GitHub Actions so media playback, text handling, and privacy
-contracts are checked before review.
+`android-speaker` has source contracts plus guarded Gradle and merged-manifest
+gates behind `make check`. The canonical workflow now installs the compatible
+legacy Android toolchain so speech lifecycle, text handling, built privacy,
+lint, tests, and assembly are checked before review.
 
 ## Objectives
 
-- Run the existing `make check` wrapper in GitHub Actions.
-- Keep the CI job useful even when a legacy Android SDK is unavailable.
-- Make the workflow presence part of the SDK-free baseline contract.
+- Run the complete `make check` wrapper in GitHub Actions.
+- Install Android API 22 and build-tools 24.0.3 under Java 8.
+- Verify the merged debug manifest through a structured parser.
+- Make the workflow and complete hosted gate part of the source baseline.
 
 ## Work Completed
 
 - Added `.github/workflows/check.yml` to run `make check` on pushes, pull
   requests, and manual dispatches.
-- Pinned checkout to an immutable revision, limited permissions to repository
-  reads, disabled persisted checkout credentials, and bounded the job to five
-  minutes.
-- Reused the guarded Makefile targets, which run SDK-free checks and skip Gradle
-  work when the Android SDK is absent.
-- Removed the maintainer-specific default SDK path and cleared ambient hosted
-  SDK variables so CI cannot accidentally invoke the unsupported Gradle path.
+- Pinned checkout and Java setup to immutable revisions, limited permissions to
+  repository reads, disabled persisted checkout credentials, and bounded the
+  job to 15 minutes.
+- Installed the exact API 22 and build-tools 24.0.3 packages before running the
+  guarded Makefile targets.
+- Made lint warnings fatal while retaining only documented legacy suppressions.
+- Selected deterministic non-queued PNG crunching without skipping aapt
+  validation.
+- Added unit-tested structured validation of package, SDK, backup, launcher,
+  and no-INTERNET contracts in the merged debug manifest.
 - Extended `scripts/check-baseline.sh` to require one exact canonical workflow
   instead of bypassable substring checks.
 - Added CODEOWNERS coverage for the workflow, verification entry points, and
@@ -46,5 +50,6 @@ contracts are checked before review.
 
 ## Follow-Up Candidates
 
-- Add Android SDK-backed CI after migrating the legacy Gradle, Android plugin,
-  repository, API-level, and media playback test baseline.
+- Exercise platform speech behavior on devices with multiple installed engines.
+- Modernize the legacy Gradle, Android plugin, and target SDK in a separate
+  behavior-aware follow-up.
