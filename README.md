@@ -116,9 +116,13 @@ When the required SDK or runtime is unavailable, use static checks and source re
   engine when the activity is destroyed.
 - Failed speech-engine initialization releases the engine immediately while
   leaving playback disabled and the activity responsive.
+- TextToSpeech listener registration failure uses the same immediate engine
+  cleanup path before playback can be marked ready.
 - Utterance ownership transitions are synchronized across UI and engine
   callback threads, and playback errors are revalidated on the UI thread before
   notifying the user.
+- See `docs/plans/2026-06-13-speaker-listener-registration-guard.md` for the
+  listener setup ordering and completed verification evidence.
 - It also uses HTTPS Maven Central for build resolution. `app/lint.xml`
   suppresses the obsolete lint API database error, the missing-density-folder
   warning for the bitmap asset intentionally kept in `drawable-nodpi`, and the
