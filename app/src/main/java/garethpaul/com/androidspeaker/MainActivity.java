@@ -70,28 +70,33 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             return;
         }
 
-        engine.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-            @Override
-            public void onStart(String utteranceId) {
-            }
-
-            @Override
-            public void onDone(String utteranceId) {
-                clearActiveUtterance(utteranceId);
-            }
-
-            @Override
-            public void onError(final String utteranceId) {
-                runOnUiThread(new Runnable() {
+        int listenerStatus = engine.setOnUtteranceProgressListener(
+                new UtteranceProgressListener() {
                     @Override
-                    public void run() {
-                        if (clearActiveUtterance(utteranceId)) {
-                            showToast(R.string.speech_playback_failed);
-                        }
+                    public void onStart(String utteranceId) {
+                    }
+
+                    @Override
+                    public void onDone(String utteranceId) {
+                        clearActiveUtterance(utteranceId);
+                    }
+
+                    @Override
+                    public void onError(final String utteranceId) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (clearActiveUtterance(utteranceId)) {
+                                    showToast(R.string.speech_playback_failed);
+                                }
+                            }
+                        });
                     }
                 });
-            }
-        });
+        if (listenerStatus == TextToSpeech.ERROR) {
+            handleEngineInitializationFailure();
+            return;
+        }
 
         textToSpeechReady = true;
         if (!isFinishing() && !isDestroyed()) {

@@ -23,6 +23,7 @@ LINT_CONFIG="$ROOT_DIR/app/lint.xml"
 MERGED_MANIFEST_CHECK="$ROOT_DIR/scripts/check_merged_manifest.py"
 MERGED_MANIFEST_TEST="$ROOT_DIR/scripts/test_check_merged_manifest.py"
 INIT_FAILURE_CLEANUP_PLAN="$ROOT_DIR/docs/plans/2026-06-12-speaker-initialization-failure-cleanup.md"
+LISTENER_REGISTRATION_PLAN="$ROOT_DIR/docs/plans/2026-06-13-speaker-listener-registration-guard.md"
 WRAPPER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-gradle-wrapper-verification.md"
 GRADLEW="$ROOT_DIR/gradlew"
 GRADLEW_BAT="$ROOT_DIR/gradlew.bat"
@@ -303,6 +304,47 @@ for tts_contract in \
   "textToSpeech.shutdown()"; do
   if ! grep -Fq "$tts_contract" "$MAIN_ACTIVITY"; then
     printf '%s\n' "Missing platform text-to-speech contract: $tts_contract" >&2
+    exit 1
+  fi
+done
+
+LISTENER_SETUP=$(sed -n \
+  '/int listenerStatus = engine.setOnUtteranceProgressListener(/,/textToSpeechReady = true;/p' \
+  "$MAIN_ACTIVITY")
+for listener_contract in \
+  "int listenerStatus = engine.setOnUtteranceProgressListener(" \
+  "if (listenerStatus == TextToSpeech.ERROR)" \
+  "handleEngineInitializationFailure();" \
+  "return;" \
+  "textToSpeechReady = true;"; do
+  if ! printf '%s\n' "$LISTENER_SETUP" | grep -Fq "$listener_contract"; then
+    printf '%s\n' "Speaker listener registration guard is missing: $listener_contract" >&2
+    exit 1
+  fi
+done
+listener_call_line=$(printf '%s\n' "$LISTENER_SETUP" | grep -nF "int listenerStatus =" | cut -d: -f1)
+listener_error_line=$(printf '%s\n' "$LISTENER_SETUP" | grep -nF "if (listenerStatus == TextToSpeech.ERROR)" | cut -d: -f1)
+listener_cleanup_line=$(printf '%s\n' "$LISTENER_SETUP" | grep -nF "handleEngineInitializationFailure();" | cut -d: -f1)
+listener_ready_line=$(printf '%s\n' "$LISTENER_SETUP" | grep -nF "textToSpeechReady = true;" | cut -d: -f1)
+if [ -z "$listener_call_line" ] || [ -z "$listener_error_line" ] || \
+   [ -z "$listener_cleanup_line" ] || [ -z "$listener_ready_line" ] || \
+   [ "$listener_call_line" -ge "$listener_error_line" ] || \
+   [ "$listener_error_line" -ge "$listener_cleanup_line" ] || \
+   [ "$listener_cleanup_line" -ge "$listener_ready_line" ]; then
+  printf '%s\n' "Speaker readiness must follow successful listener registration and failure cleanup." >&2
+  exit 1
+fi
+if [ ! -f "$LISTENER_REGISTRATION_PLAN" ] || \
+   ! grep -Fq "Status: Completed" "$LISTENER_REGISTRATION_PLAN" || \
+   ! grep -Fq "make check" "$LISTENER_REGISTRATION_PLAN" || \
+   ! grep -Fq "hostile mutations" "$LISTENER_REGISTRATION_PLAN"; then
+  printf '%s\n' "Speaker listener registration plan must record completed verification." >&2
+  exit 1
+fi
+for listener_doc in "$README" "$SECURITY" "$ROOT_DIR/CHANGES.md"; do
+  if ! tr '\n' ' ' < "$listener_doc" | tr -s '[:space:]' ' ' | \
+      grep -Fiq "listener registration failure"; then
+    printf '%s\n' "$listener_doc must document listener registration failure handling." >&2
     exit 1
   fi
 done

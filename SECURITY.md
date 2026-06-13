@@ -36,6 +36,8 @@ Helpful reports include:
   before review without inheriting hosted Android SDK state or persisted
   checkout credentials. The SDK-free baseline requires this to remain the only
   workflow and match its canonical contract exactly.
+- TextToSpeech listener registration failure cannot leave playback enabled or
+  retain an engine without the callbacks required for utterance ownership.
 - The baseline pins and verifies the wrapper JAR and Gradle distribution checksums.
   An uncached bootstrap still depends on Gradle's HTTPS service.
 - CODEOWNERS covers workflows, verification entry points, and the complete app

@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-13
+
+- Guarded TextToSpeech listener registration failure so playback is not marked
+  ready without ownership callbacks and the unusable engine is released.
+
 ## 2026-06-12
 
 - Regenerated the Gradle wrapper bootstrap with official Gradle 8.14.5 tooling
