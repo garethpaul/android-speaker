@@ -24,6 +24,7 @@ MERGED_MANIFEST_CHECK="$ROOT_DIR/scripts/check_merged_manifest.py"
 MERGED_MANIFEST_TEST="$ROOT_DIR/scripts/test_check_merged_manifest.py"
 INIT_FAILURE_CLEANUP_PLAN="$ROOT_DIR/docs/plans/2026-06-12-speaker-initialization-failure-cleanup.md"
 LISTENER_REGISTRATION_PLAN="$ROOT_DIR/docs/plans/2026-06-13-speaker-listener-registration-guard.md"
+DEVICE_VERIFICATION_PLAN="$ROOT_DIR/docs/plans/2026-06-14-android-speaker-device-verification-checklist.md"
 WRAPPER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-gradle-wrapper-verification.md"
 GRADLEW="$ROOT_DIR/gradlew"
 GRADLEW_BAT="$ROOT_DIR/gradlew.bat"
@@ -341,6 +342,55 @@ if [ ! -f "$LISTENER_REGISTRATION_PLAN" ] || \
   printf '%s\n' "Speaker listener registration plan must record completed verification." >&2
   exit 1
 fi
+
+for required_device_path in "$ROOT_DIR/DEVICE_VERIFICATION.md" "$DEVICE_VERIFICATION_PLAN"; do
+  if [ ! -f "$required_device_path" ]; then
+    printf '%s\n' "Required Android Speaker device verification file is missing: ${required_device_path#"$ROOT_DIR/"}" >&2
+    exit 1
+  fi
+done
+
+for device_contract in \
+  'commit SHA and pull request' \
+  'synthetic speech text' \
+  'Engine initialization' \
+  'Engine unavailable' \
+  'Listener registration failure' \
+  'Overlength input' \
+  'QUEUE_FLUSH replacement' \
+  'Rapid speak replacement' \
+  'Completion callback' \
+  'Pause during speech' \
+  'Destroy during speech' \
+  'Engine change' \
+  'Audio route change' \
+  'Do not convert `not run` into passing evidence.' \
+  'device identifiers, account names, voice recordings' \
+  'every Android, speech-engine, audio, and lifecycle row as unexecuted'; do
+  if ! grep -Fq "$device_contract" "$ROOT_DIR/DEVICE_VERIFICATION.md"; then
+    printf '%s\n' "Android Speaker device checklist must keep contract: $device_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq 'DEVICE_VERIFICATION.md' "$README" || \
+   ! grep -Fq 'explicit unexecuted rows' "$README" || \
+   ! grep -Fq 'Android Speaker device verification matrix' "$ROOT_DIR/VISION.md" || \
+   ! grep -Fq 'every runtime row explicitly unexecuted' "$ROOT_DIR/CHANGES.md"; then
+  printf '%s\n' 'Repository guidance must document the unexecuted Android Speaker device matrix.' >&2
+  exit 1
+fi
+
+for device_plan_contract in \
+  'Status: Completed' \
+  'make check' \
+  'hostile mutations' \
+  'No Android SDK, emulator, configured speech engine, controlled audio route, physical device, or live playback scenario was executed'; do
+  if ! grep -Fq "$device_plan_contract" "$DEVICE_VERIFICATION_PLAN"; then
+    printf '%s\n' "Android Speaker device plan must keep completion evidence: $device_plan_contract" >&2
+    exit 1
+  fi
+done
 for listener_doc in "$README" "$SECURITY" "$ROOT_DIR/CHANGES.md"; do
   if ! tr '\n' ' ' < "$listener_doc" | tr -s '[:space:]' ' ' | \
       grep -Fiq "listener registration failure"; then

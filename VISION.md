@@ -30,6 +30,9 @@ Priority:
 - Keep the legacy Gradle runtime behind a checksum-verified generated wrapper
 - Keep user-entered speech text bounded before platform engine dispatch
 - Keep startup guarded when required speech controls are missing
+- Keep exact-commit Android Speaker device verification matrix evidence
+  separate from portable checks, with unexecuted engine, audio, and lifecycle
+  rows explicit
 
 Next priorities:
 
@@ -39,6 +42,8 @@ Next priorities:
 - Add tests or manual verification notes for playback behavior
 - Evaluate Gradle runtime, SDK, permissions, and dependency modernization
   together in a dedicated compatibility pass; wrapper hardening is separate
+- Execute the device verification matrix with synthetic text and privacy-safe
+  speech-engine, audio-route, and lifecycle evidence
 
 Contribution rules:
 

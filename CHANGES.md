@@ -1,5 +1,11 @@
 # Changes
 
+## 2026-06-14
+
+- Added an exact-commit Android Speaker device verification matrix for engine
+  readiness, input boundaries, utterance ownership, completion, lifecycle
+  cleanup, engine and audio-route changes, and privacy-safe evidence, with every runtime row explicitly unexecuted.
+
 ## 2026-06-13
 
 - Guarded TextToSpeech listener registration failure so playback is not marked

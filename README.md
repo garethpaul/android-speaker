@@ -80,6 +80,11 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   resource hygiene.
 - `./gradlew lint --no-daemon`, `./gradlew test --no-daemon`, and `./gradlew assembleDebug --no-daemon` when the Android SDK is configured.
 
+Use [`DEVICE_VERIFICATION.md`](DEVICE_VERIFICATION.md) for the exact-commit
+Android speaker matrix. It covers engine readiness, input boundaries, utterance
+ownership, completion, lifecycle cleanup, engine and audio-route changes,
+privacy-safe evidence, and explicit unexecuted rows.
+
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
 ## Configuration and Secrets
@@ -149,6 +154,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `docs/plans/2026-06-10-ci-baseline.md` for the GitHub Actions baseline.
 - See `docs/plans/2026-06-10-platform-text-to-speech.md` for the supported
   platform speech migration.
+- See `docs/plans/2026-06-14-android-speaker-device-verification-checklist.md`
+  for the device evidence matrix and runtime non-claims.
 
 ## Contributing
 
