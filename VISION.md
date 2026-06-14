@@ -33,6 +33,8 @@ Priority:
 - Keep exact-commit Android Speaker device verification matrix evidence
   separate from portable checks, with unexecuted engine, audio, and lifecycle
   rows explicit
+- Keep the legacy instrumentation bootstrap assertion compiling while treating
+  speech-engine and audio behavior as a separate device boundary
 
 Next priorities:
 

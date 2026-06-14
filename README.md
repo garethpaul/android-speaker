@@ -112,6 +112,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 ## Maintenance Notes
 
+- The legacy instrumentation bootstrap creates the application and verifies its
+  package identity; TextToSpeech and device behavior remain outside that
+  assertion.
 - This looks like a legacy Android project or sample. Expect Android SDK, Gradle, and support-library versions to matter.
 - The current baseline avoids logging user-entered text and delegates speech to
   the platform `TextToSpeech` engine instead of an undocumented remote URL.

@@ -1,7 +1,7 @@
 ---
 title: Instrumentation Application Bootstrap
 type: testing
-status: planned
+status: completed
 date: 2026-06-14
 ---
 
@@ -42,3 +42,15 @@ bootstrap behavior.
   language selection, audio output, lifecycle timing, or device behavior.
 - The legacy instrumentation test requires a compatible emulator or physical
   device for execution.
+
+## Verification Results
+
+- `app:assembleDebugAndroidTest` compiled and packaged the instrumentation APK
+  against the configured Android SDK.
+- Repository and external-directory `make check` passed the SDK-backed lint,
+  unit-test, debug assembly, merged-manifest, and portable-contract gates.
+- Six hostile mutations covering the test method, application creation,
+  non-null assertion, package assertion, documentation, and completed-plan
+  evidence were rejected.
+- No emulator or physical-device instrumentation was executed, so the runtime
+  assertion remains unexecuted locally.

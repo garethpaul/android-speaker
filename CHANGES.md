@@ -2,6 +2,8 @@
 
 ## 2026-06-14
 
+- Added an instrumentation bootstrap assertion that creates the application and
+  verifies the Android Speaker package identity.
 - Added an exact-commit Android Speaker device verification matrix for engine
   readiness, input boundaries, utterance ownership, completion, lifecycle
   cleanup, engine and audio-route changes, and privacy-safe evidence, with every runtime row explicitly unexecuted.

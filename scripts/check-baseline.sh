@@ -25,6 +25,8 @@ MERGED_MANIFEST_TEST="$ROOT_DIR/scripts/test_check_merged_manifest.py"
 INIT_FAILURE_CLEANUP_PLAN="$ROOT_DIR/docs/plans/2026-06-12-speaker-initialization-failure-cleanup.md"
 LISTENER_REGISTRATION_PLAN="$ROOT_DIR/docs/plans/2026-06-13-speaker-listener-registration-guard.md"
 DEVICE_VERIFICATION_PLAN="$ROOT_DIR/docs/plans/2026-06-14-android-speaker-device-verification-checklist.md"
+INSTRUMENTATION_BOOTSTRAP_PLAN="$ROOT_DIR/docs/plans/2026-06-14-instrumentation-application-bootstrap.md"
+APPLICATION_TEST="$ROOT_DIR/app/src/androidTest/java/garethpaul/com/androidspeaker/ApplicationTest.java"
 WRAPPER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-gradle-wrapper-verification.md"
 GRADLEW="$ROOT_DIR/gradlew"
 GRADLEW_BAT="$ROOT_DIR/gradlew.bat"
@@ -876,5 +878,39 @@ if ! grep -Fq "Status: Completed" "$ATOMIC_OWNERSHIP_PLAN" || \
   printf '%s\n' "Atomic utterance ownership plan must record completed status and make check verification." >&2
   exit 1
 fi
+
+for instrumentation_contract in \
+  "public void testApplicationCreatesSpeakerPackage() throws Exception" \
+  "createApplication();" \
+  "assertNotNull(getApplication());" \
+  'assertEquals("garethpaul.com.androidspeaker", getApplication().getPackageName());'; do
+  if ! grep -Fq "$instrumentation_contract" "$APPLICATION_TEST"; then
+    printf '%s\n' "ApplicationTest must keep bootstrap assertion: $instrumentation_contract" >&2
+    exit 1
+  fi
+done
+
+for instrumentation_doc_contract in \
+  "$README|instrumentation bootstrap creates the application" \
+  "$ROOT_DIR/VISION.md|instrumentation bootstrap assertion" \
+  "$ROOT_DIR/CHANGES.md|instrumentation bootstrap assertion"; do
+  instrumentation_doc=${instrumentation_doc_contract%%|*}
+  instrumentation_text=${instrumentation_doc_contract#*|}
+  if ! grep -Fq "$instrumentation_text" "$instrumentation_doc"; then
+    printf '%s\n' "$instrumentation_doc must document the instrumentation bootstrap assertion." >&2
+    exit 1
+  fi
+done
+
+for instrumentation_plan_contract in \
+  "status: completed" \
+  "make check" \
+  "hostile mutations" \
+  "No emulator or physical-device instrumentation was executed"; do
+  if ! grep -Fqi "$instrumentation_plan_contract" "$INSTRUMENTATION_BOOTSTRAP_PLAN"; then
+    printf '%s\n' "Instrumentation plan must keep completion evidence: $instrumentation_plan_contract" >&2
+    exit 1
+  fi
+done
 
 printf '%s\n' "Android speaker baseline checks passed."
