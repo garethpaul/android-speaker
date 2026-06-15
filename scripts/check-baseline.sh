@@ -3,6 +3,8 @@ set -eu
 
 ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 MAIN_ACTIVITY="$ROOT_DIR/app/src/main/java/garethpaul/com/androidspeaker/MainActivity.java"
+UTTERANCE_OWNERSHIP="$ROOT_DIR/app/src/main/java/garethpaul/com/androidspeaker/UtteranceOwnership.java"
+UTTERANCE_OWNERSHIP_TEST="$ROOT_DIR/app/src/test/java/garethpaul/com/androidspeaker/UtteranceOwnershipTest.java"
 APP_BUILD="$ROOT_DIR/app/build.gradle"
 MANIFEST="$ROOT_DIR/app/src/main/AndroidManifest.xml"
 ROOT_BUILD="$ROOT_DIR/build.gradle"
@@ -26,6 +28,7 @@ INIT_FAILURE_CLEANUP_PLAN="$ROOT_DIR/docs/plans/2026-06-12-speaker-initializatio
 LISTENER_REGISTRATION_PLAN="$ROOT_DIR/docs/plans/2026-06-13-speaker-listener-registration-guard.md"
 DEVICE_VERIFICATION_PLAN="$ROOT_DIR/docs/plans/2026-06-14-android-speaker-device-verification-checklist.md"
 INSTRUMENTATION_BOOTSTRAP_PLAN="$ROOT_DIR/docs/plans/2026-06-14-instrumentation-application-bootstrap.md"
+UTTERANCE_OWNERSHIP_TEST_PLAN="$ROOT_DIR/docs/plans/2026-06-15-speaker-utterance-ownership-tests.md"
 APPLICATION_TEST="$ROOT_DIR/app/src/androidTest/java/garethpaul/com/androidspeaker/ApplicationTest.java"
 WRAPPER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-gradle-wrapper-verification.md"
 GRADLEW="$ROOT_DIR/gradlew"
@@ -94,7 +97,11 @@ if [ -d "$ROOT_DIR/app/libs" ] && \
   exit 1
 fi
 
-expected_dependencies="    compile fileTree(dir: 'libs', include: ['*.jar'])"
+expected_dependencies=$(cat <<'EOF'
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile group: 'junit', name: 'junit', version: '4.13.2'
+EOF
+)
 actual_dependencies=$(sed -n '/^dependencies {$/,/^}$/p' "$APP_BUILD" | sed '1d;$d' | sed '/^[[:space:]]*$/d')
 if [ "$actual_dependencies" != "$expected_dependencies" ]; then
   printf '%s\n' "Android dependencies must remain at the audited legacy baseline." >&2
@@ -181,6 +188,7 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile group: 'junit', name: 'junit', version: '4.13.2'
 }
 EOF
 )
@@ -295,12 +303,9 @@ for tts_contract in \
   "playButton.setEnabled(false)" \
   "playButton.setEnabled(true)" \
   "setOnUtteranceProgressListener" \
-  "private synchronized String beginUtterance()" \
-  "private synchronized boolean clearActiveUtterance(String utteranceId)" \
-  "private synchronized void abandonActiveUtterance()" \
-  "clearActiveUtterance(utteranceId)" \
-  'String utteranceId = "speaker-" + (++utteranceSequence)' \
-  "String utteranceId = beginUtterance()" \
+  "private final UtteranceOwnership utteranceOwnership" \
+  "utteranceOwnership.clear(utteranceId)" \
+  "String utteranceId = utteranceOwnership.begin()" \
   "engine.speak(speechText, TextToSpeech.QUEUE_FLUSH, null, utteranceId)" \
   "if (result == TextToSpeech.ERROR)" \
   "textToSpeech.stop()" \
@@ -407,7 +412,7 @@ if grep -Fq "volatile String activeUtteranceId" "$MAIN_ACTIVITY"; then
 fi
 
 if ! grep -Fq "public void onError(final String utteranceId)" "$MAIN_ACTIVITY" || \
-   ! grep -Fq "if (clearActiveUtterance(utteranceId))" "$MAIN_ACTIVITY"; then
+   ! grep -Fq "if (utteranceOwnership.clear(utteranceId))" "$MAIN_ACTIVITY"; then
   printf '%s\n' "Playback errors must recheck utterance ownership on the UI thread." >&2
   exit 1
 fi
@@ -417,13 +422,13 @@ if [ "$(grep -Fc "playButton.setEnabled(false);" "$MAIN_ACTIVITY")" -lt 2 ]; the
   exit 1
 fi
 
-if [ "$(grep -Fc "clearActiveUtterance(utteranceId)" "$MAIN_ACTIVITY")" -lt 3 ]; then
+if [ "$(grep -Fc "utteranceOwnership.clear(utteranceId)" "$MAIN_ACTIVITY")" -lt 3 ]; then
   printf '%s\n' "Speech completion, callback failure, and dispatch failure must correlate utterances." >&2
   exit 1
 fi
 
 INIT_FAILURE_HANDLER=$(sed -n \
-  '/private void handleEngineInitializationFailure()/,/private synchronized String beginUtterance()/p' \
+  '/private void handleEngineInitializationFailure()/,/private void showToast/p' \
   "$MAIN_ACTIVITY")
 for failure_cleanup_contract in \
   "TextToSpeech engine = textToSpeech;" \
@@ -876,6 +881,73 @@ fi
 if ! grep -Fq "Status: Completed" "$ATOMIC_OWNERSHIP_PLAN" || \
    ! grep -Fq "make check" "$ATOMIC_OWNERSHIP_PLAN"; then
   printf '%s\n' "Atomic utterance ownership plan must record completed status and make check verification." >&2
+  exit 1
+fi
+
+for ownership_file in "$UTTERANCE_OWNERSHIP" "$UTTERANCE_OWNERSHIP_TEST" "$UTTERANCE_OWNERSHIP_TEST_PLAN"; do
+  if [ ! -f "$ownership_file" ]; then
+    printf '%s\n' "Required utterance ownership file is missing: ${ownership_file#"$ROOT_DIR/"}" >&2
+    exit 1
+  fi
+done
+
+for ownership_contract in \
+  "synchronized String begin()" \
+  'String utteranceId = "speaker-" + (++sequence)' \
+  "synchronized boolean clear(String utteranceId)" \
+  "utteranceId == null || !utteranceId.equals(activeUtteranceId)" \
+  "synchronized void abandon()"; do
+  if ! grep -Fq "$ownership_contract" "$UTTERANCE_OWNERSHIP"; then
+    printf '%s\n' "UtteranceOwnership must keep contract: $ownership_contract" >&2
+    exit 1
+  fi
+done
+
+abandon_method=$(sed -n '/synchronized void abandon()/,/^    }/p' "$UTTERANCE_OWNERSHIP")
+if ! printf '%s\n' "$abandon_method" | grep -Fq "activeUtteranceId = null"; then
+  printf '%s\n' "UtteranceOwnership abandonment must clear the active utterance." >&2
+  exit 1
+fi
+
+for ownership_test_contract in \
+  "beginsDistinctOrderedUtterances" \
+  "clearsCurrentUtteranceExactlyOnce" \
+  "staleUtteranceCannotClearReplacement" \
+  "nullUtteranceCannotClearCurrentOwnership" \
+  "abandonmentInvalidatesCurrentUtterance" \
+  "callbackAfterAbandonmentCannotClearFutureOwnership"; do
+  if ! grep -Fq "$ownership_test_contract" "$UTTERANCE_OWNERSHIP_TEST"; then
+    printf '%s\n' "UtteranceOwnershipTest must keep case: $ownership_test_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "testCompile group: 'junit', name: 'junit', version: '4.13.2'" "$APP_BUILD"; then
+  printf '%s\n' "Speaker JVM ownership tests must keep JUnit 4.13.2." >&2
+  exit 1
+fi
+
+if [ "$(grep -Fc "utteranceOwnership.abandon();" "$MAIN_ACTIVITY")" -ne 2 ]; then
+  printf '%s\n' "Pause and destroy must both abandon utterance ownership." >&2
+  exit 1
+fi
+
+for ownership_plan_contract in \
+  'Status: Completed' \
+  'focused ownership tests' \
+  'repository and external-directory `make check`' \
+  'isolated hostile mutations' \
+  'generated-artifact and likely-secret audits'; do
+  if ! grep -Fq "$ownership_plan_contract" "$UTTERANCE_OWNERSHIP_TEST_PLAN"; then
+    printf '%s\n' "Speaker ownership test plan must keep completion evidence: $ownership_plan_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "Pure JVM tests cover utterance replacement, stale callbacks, and lifecycle abandonment." "$README" || \
+   ! grep -Fq "Keep pure JVM utterance ownership tests" "$ROOT_DIR/VISION.md" || \
+   ! grep -Fq "pure JVM utterance ownership tests" "$ROOT_DIR/CHANGES.md"; then
+  printf '%s\n' "Repository guidance must document executable utterance ownership coverage." >&2
   exit 1
 fi
 

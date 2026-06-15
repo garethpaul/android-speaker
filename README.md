@@ -129,6 +129,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Utterance ownership transitions are synchronized across UI and engine
   callback threads, and playback errors are revalidated on the UI thread before
   notifying the user.
+- Pure JVM tests cover utterance replacement, stale callbacks, and lifecycle abandonment.
 - See `docs/plans/2026-06-13-speaker-listener-registration-guard.md` for the
   listener setup ordering and completed verification evidence.
 - It also uses HTTPS Maven Central for build resolution. `app/lint.xml`

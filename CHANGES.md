@@ -1,5 +1,12 @@
 # Changes
 
+## 2026-06-15
+
+- Added pure JVM utterance ownership tests for replacement speech, stale and
+  null callbacks, exact clearing, and lifecycle abandonment.
+- Moved the synchronized ownership state machine out of the activity without
+  changing TextToSpeech or UI behavior.
+
 ## 2026-06-14
 
 - Added an instrumentation bootstrap assertion that creates the application and

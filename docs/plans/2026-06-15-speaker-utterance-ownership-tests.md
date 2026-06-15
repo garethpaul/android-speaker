@@ -1,6 +1,6 @@
 # Speaker Utterance Ownership Tests
 
-Status: Planned
+Status: Completed
 
 ## Problem
 
@@ -70,13 +70,19 @@ evidence, and a clear device-runtime boundary.
   behavior from pure JVM tests.
 - Keep this work stacked on the instrumentation-bootstrap pull request.
 
-## Verification To Complete
+## Completed Verification
 
-- Run focused ownership tests, complete Gradle tests, lint, and debug assembly.
-- Run repository and external-directory `make check` with explicit timeouts.
-- Reject isolated mutations for synchronization, replacement, stale/null
-  clearing, abandonment, activity delegation, test coverage, dependency,
-  guidance, and plan completion.
-- Run exact diff, generated-artifact, likely-secret, and whitespace audits.
-- Take one bounded exact-head hosted snapshot after push without polling.
-
+- The focused ownership tests passed all six transitions through the pinned
+  legacy Gradle stack.
+- Debug and release Gradle unit tasks passed, Android lint reported zero issues
+  for both variants, and debug APK assembly succeeded with the installed SDK.
+- The repository and external-directory `make check` gates passed with explicit
+  SDK environment variables and bounded commands.
+- Ten isolated hostile mutations were rejected for synchronization,
+  replacement, stale/null clearing, abandonment, activity delegation, tests,
+  dependency, guidance, and plan completion.
+- Exact diff, generated-artifact and likely-secret audits, and whitespace checks
+  passed after removing only explicit reproducible Gradle output.
+- Hosted evidence is recorded separately from one bounded exact-head snapshot
+  after push; TextToSpeech callbacks, audio, emulator, and device behavior are
+  not claimed by these pure JVM tests.

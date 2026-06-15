@@ -26,6 +26,7 @@ Priority:
 - Stop active speech when the activity pauses and shut down on destroy
 - Ignore stale utterance callbacks after a newer speech request replaces them
 - Keep utterance ownership atomic across UI and speech-engine callback threads
+- Keep pure JVM utterance ownership tests for replacement, stale callbacks, and abandonment
 - Keep GitHub Actions running the root `make check` baseline before review
 - Keep the legacy Gradle runtime behind a checksum-verified generated wrapper
 - Keep user-entered speech text bounded before platform engine dispatch

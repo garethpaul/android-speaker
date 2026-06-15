@@ -21,8 +21,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private EditText textInput;
     private TextToSpeech textToSpeech;
     private boolean textToSpeechReady;
-    private long utteranceSequence;
-    private String activeUtteranceId;
+    private final UtteranceOwnership utteranceOwnership = new UtteranceOwnership();
 
     static String normalizeSpeechText(String text) {
         if (text == null) {
@@ -78,7 +77,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
                     @Override
                     public void onDone(String utteranceId) {
-                        clearActiveUtterance(utteranceId);
+                        utteranceOwnership.clear(utteranceId);
                     }
 
                     @Override
@@ -86,7 +85,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                if (clearActiveUtterance(utteranceId)) {
+                                if (utteranceOwnership.clear(utteranceId)) {
                                     showToast(R.string.speech_playback_failed);
                                 }
                             }
@@ -121,10 +120,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             return;
         }
 
-        String utteranceId = beginUtterance();
+        String utteranceId = utteranceOwnership.begin();
         int result = engine.speak(speechText, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
         if (result == TextToSpeech.ERROR) {
-            clearActiveUtterance(utteranceId);
+            utteranceOwnership.clear(utteranceId);
             showToast(R.string.speech_playback_failed);
         }
     }
@@ -144,24 +143,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         showToast(R.string.speech_engine_unavailable);
     }
 
-    private synchronized String beginUtterance() {
-        String utteranceId = "speaker-" + (++utteranceSequence);
-        activeUtteranceId = utteranceId;
-        return utteranceId;
-    }
-
-    private synchronized boolean clearActiveUtterance(String utteranceId) {
-        if (utteranceId == null || !utteranceId.equals(activeUtteranceId)) {
-            return false;
-        }
-        activeUtteranceId = null;
-        return true;
-    }
-
-    private synchronized void abandonActiveUtterance() {
-        activeUtteranceId = null;
-    }
-
     private void showToast(int messageId) {
         if (!isFinishing() && !isDestroyed()) {
             Toast.makeText(this, messageId, Toast.LENGTH_SHORT).show();
@@ -170,7 +151,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     @Override
     protected void onPause() {
-        abandonActiveUtterance();
+        utteranceOwnership.abandon();
         if (textToSpeech != null) {
             textToSpeech.stop();
         }
@@ -180,7 +161,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     @Override
     protected void onDestroy() {
         textToSpeechReady = false;
-        abandonActiveUtterance();
+        utteranceOwnership.abandon();
         if (textToSpeech != null) {
             textToSpeech.stop();
             textToSpeech.shutdown();
