@@ -53,6 +53,7 @@ Helpful reports include:
 - The SDK-free baseline does not inspect a built merged manifest. Android
   SDK-backed lint, tests, assembly, and merged-manifest review remain required
   before claiming platform-level permission verification.
+- The explicit launcher export boundary is limited to .MainActivity and preserves its MAIN/LAUNCHER entry point.
 
 If this project requests device permissions such as location, camera, microphone, contacts, Bluetooth, health data, or local storage access, reports should describe the permission involved and whether sensitive data can be accessed, persisted, or transmitted unexpectedly. Please avoid testing against real third-party user data or accounts you do not control.
 

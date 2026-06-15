@@ -20,6 +20,58 @@ def require(condition, message):
         raise ValueError(message)
 
 
+def validate_launcher_export(application, launcher_name):
+    activities = application.findall("activity")
+    exported_activities = [
+        activity
+        for activity in activities
+        if android_attribute(activity, "exported") == "true"
+    ]
+    require(
+        len(exported_activities) == 1,
+        "manifest must contain exactly one exported activity",
+    )
+
+    launcher_activity = None
+    for activity in activities:
+        if android_attribute(activity, "name") == launcher_name:
+            launcher_activity = activity
+            break
+    require(launcher_activity is not None, "launcher activity changed")
+    require(
+        launcher_activity is exported_activities[0],
+        "launcher activity must be explicitly exported",
+    )
+
+    for intent_filter in launcher_activity.findall("intent-filter"):
+        actions = {
+            android_attribute(action, "name")
+            for action in intent_filter.findall("action")
+        }
+        categories = {
+            android_attribute(category, "name")
+            for category in intent_filter.findall("category")
+        }
+        if (
+            "android.intent.action.MAIN" in actions
+            and "android.intent.category.LAUNCHER" in categories
+        ):
+            return
+
+    raise ValueError("launcher intent filter changed")
+
+
+def validate_source_manifest(path):
+    root = ET.parse(str(path)).getroot()
+    require(
+        root.get("package") == "garethpaul.com.androidspeaker",
+        "source manifest package changed",
+    )
+    application = root.find("application")
+    require(application is not None, "source manifest is missing application")
+    validate_launcher_export(application, ".MainActivity")
+
+
 def validate_manifest(path):
     root = ET.parse(str(path)).getroot()
     require(
@@ -46,40 +98,27 @@ def validate_manifest(path):
                 "merged manifest must not request INTERNET",
             )
 
-    launcher_activity = None
-    for activity in application.findall("activity"):
-        if android_attribute(activity, "name") == "garethpaul.com.androidspeaker.MainActivity":
-            launcher_activity = activity
-            break
-    require(launcher_activity is not None, "launcher activity changed")
-
-    for intent_filter in launcher_activity.findall("intent-filter"):
-        actions = {
-            android_attribute(action, "name")
-            for action in intent_filter.findall("action")
-        }
-        categories = {
-            android_attribute(category, "name")
-            for category in intent_filter.findall("category")
-        }
-        if (
-            "android.intent.action.MAIN" in actions
-            and "android.intent.category.LAUNCHER" in categories
-        ):
-            return
-
-    raise ValueError("launcher intent filter changed")
+    validate_launcher_export(
+        application, "garethpaul.com.androidspeaker.MainActivity"
+    )
 
 
 def main(argv):
-    manifest = Path(argv[1]) if len(argv) > 1 else DEFAULT_MANIFEST
+    source_mode = len(argv) == 3 and argv[1] == "--source"
+    manifest = Path(argv[2]) if source_mode else (
+        Path(argv[1]) if len(argv) > 1 else DEFAULT_MANIFEST
+    )
     try:
-        validate_manifest(manifest)
+        if source_mode:
+            validate_source_manifest(manifest)
+        else:
+            validate_manifest(manifest)
     except (OSError, ET.ParseError, ValueError) as error:
         print("Merged manifest check failed: %s" % error, file=sys.stderr)
         return 1
 
-    print("Merged manifest privacy checks passed.")
+    print("Source launcher export check passed." if source_mode
+          else "Merged manifest privacy checks passed.")
     return 0
 
 

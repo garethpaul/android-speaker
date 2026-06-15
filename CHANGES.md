@@ -2,6 +2,7 @@
 
 ## 2026-06-15
 
+- The explicit launcher export boundary is limited to .MainActivity and preserves its MAIN/LAUNCHER entry point.
 - Added pure JVM utterance ownership tests for replacement speech, stale and
   null callbacks, exact clearing, and lifecycle abandonment.
 - Moved the synchronized ownership state machine out of the activity without

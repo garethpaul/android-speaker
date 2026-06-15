@@ -1,6 +1,6 @@
 # Android Speaker Explicit Launcher Export Boundary
 
-Status: Planned
+Status: Completed
 
 ## Problem
 
@@ -74,3 +74,20 @@ Document the intentional launcher boundary and completed verification evidence.
 - SDK, Gradle, Android plugin, dependency, permission, or target-SDK upgrades.
 - Emulator, physical-device, speech-engine, language, audio-routing, and
   live-playback execution.
+
+## Completion Evidence
+
+- Python syntax and the nine-case focused merged-manifest suite passed.
+- Repository-root and external-directory `make check` passed with Java 8 and
+  the configured Android SDK, including debug/release unit tests, zero-issue
+  lint, debug assembly, and parsed merged-manifest validation.
+- Nine isolated mutations were rejected across source export, unrelated source
+  export, merged export, false value, unrelated activity, launcher filter,
+  parser tests, maintained guidance, and completed-plan evidence.
+- Plan-aware review moved source-manifest enforcement from an attribute grep to
+  the same parsed launcher/export contract used for merged output, keeping the
+  SDK-free hosted gate mutation-sensitive.
+- Exact-path diff, generated-artifact, conflict-marker, dependency/workflow
+  drift, whitespace, and credential-shaped-addition audits passed.
+- No emulator, physical device, speech engine, language, audio route, or live
+  playback was exercised.

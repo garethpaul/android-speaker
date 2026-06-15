@@ -51,6 +51,7 @@
 - The app does not request `INTERNET`; preserve engine readiness checks, `QUEUE_FLUSH`, synchronized utterance ownership, stale-callback rejection, and pause/destroy cleanup.
 - Startup checks that the required speech controls are available before wiring playback actions.
 - Auto Backup disabled is part of the privacy baseline because the app has no documented restore behavior for user-entered speech text or generated playback state.
+- The explicit launcher export boundary is limited to .MainActivity and preserves its MAIN/LAUNCHER entry point.
 - This looks like a legacy Android project or sample. Expect Android SDK, Gradle, and support-library versions to matter.
 
 ## Agent workflow

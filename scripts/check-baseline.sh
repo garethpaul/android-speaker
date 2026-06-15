@@ -29,6 +29,7 @@ LISTENER_REGISTRATION_PLAN="$ROOT_DIR/docs/plans/2026-06-13-speaker-listener-reg
 DEVICE_VERIFICATION_PLAN="$ROOT_DIR/docs/plans/2026-06-14-android-speaker-device-verification-checklist.md"
 INSTRUMENTATION_BOOTSTRAP_PLAN="$ROOT_DIR/docs/plans/2026-06-14-instrumentation-application-bootstrap.md"
 UTTERANCE_OWNERSHIP_TEST_PLAN="$ROOT_DIR/docs/plans/2026-06-15-speaker-utterance-ownership-tests.md"
+EXPLICIT_LAUNCHER_EXPORT_PLAN="$ROOT_DIR/docs/plans/2026-06-15-speaker-explicit-launcher-export.md"
 APPLICATION_TEST="$ROOT_DIR/app/src/androidTest/java/garethpaul/com/androidspeaker/ApplicationTest.java"
 WRAPPER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-gradle-wrapper-verification.md"
 GRADLEW="$ROOT_DIR/gradlew"
@@ -614,17 +615,51 @@ for manifest_contract in \
   'android_attribute(application, "allowBackup") == "false"' \
   'android.permission.INTERNET' \
   'android.intent.action.MAIN' \
-  'android.intent.category.LAUNCHER'; do
+  'android.intent.category.LAUNCHER' \
+  'def validate_source_manifest(path)' \
+  'android_attribute(activity, "exported") == "true"' \
+  'len(exported_activities) == 1' \
+  'launcher_activity is exported_activities[0]'; do
   if ! grep -Fq "$manifest_contract" "$MERGED_MANIFEST_CHECK"; then
     printf '%s\n' "Merged-manifest checker must keep contract: $manifest_contract" >&2
     exit 1
   fi
 done
 
-if [ "$(grep -c '^    def test_' "$MERGED_MANIFEST_TEST")" -ne 6 ]; then
-  printf '%s\n' "Merged-manifest checker must keep six focused unit tests." >&2
+if [ "$(grep -c '^    def test_' "$MERGED_MANIFEST_TEST")" -ne 9 ]; then
+  printf '%s\n' "Merged-manifest checker must keep nine focused unit tests." >&2
   exit 1
 fi
+
+for launcher_export_test in \
+  "test_rejects_missing_launcher_export" \
+  "test_rejects_false_launcher_export" \
+  "test_rejects_unrelated_export"; do
+  if ! grep -Fq "$launcher_export_test" "$MERGED_MANIFEST_TEST"; then
+    printf '%s\n' "Merged-manifest tests must cover launcher export mutation: $launcher_export_test" >&2
+    exit 1
+  fi
+done
+
+PYTHONDONTWRITEBYTECODE=1 python3 "$MERGED_MANIFEST_CHECK" --source "$MANIFEST" >/dev/null
+
+explicit_launcher_guidance="The explicit launcher export boundary is limited to .MainActivity and preserves its MAIN/LAUNCHER entry point."
+for explicit_launcher_document in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  if ! grep -Fq "$explicit_launcher_guidance" "$ROOT_DIR/$explicit_launcher_document"; then
+    printf '%s\n' "$explicit_launcher_document must document the explicit launcher export boundary." >&2
+    exit 1
+  fi
+done
+for explicit_launcher_plan_contract in \
+  "Status: Completed" \
+  "check_merged_manifest.py" \
+  "make check" \
+  "mutations"; do
+  if ! grep -Fq "$explicit_launcher_plan_contract" "$EXPLICIT_LAUNCHER_EXPORT_PLAN"; then
+    printf '%s\n' "Explicit launcher export plan must preserve completion evidence: $explicit_launcher_plan_contract" >&2
+    exit 1
+  fi
+done
 
 if ! grep -Fq "./gradlew lint --no-daemon" "$README"; then
   printf '%s\n' "README must document Gradle lint verification." >&2

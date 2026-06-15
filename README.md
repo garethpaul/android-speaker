@@ -68,6 +68,7 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make lint` - runs the SDK-free baseline and Gradle lint when the Android SDK is configured.
 - `make test` - runs Gradle tests when the Android SDK is configured.
 - `make build` - runs debug assembly when the Android SDK is configured.
+- The explicit launcher export boundary is limited to .MainActivity and preserves its MAIN/LAUNCHER entry point.
 - `make manifest` - assembles and validates the merged debug manifest when the Android SDK is configured.
 - `make check` - runs the aggregate lint, test, build, and merged-manifest gates.
 - `scripts/check-baseline.sh` - runs SDK-free source baseline checks.
