@@ -10,4 +10,11 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
     public ApplicationTest() {
         super(Application.class);
     }
+
+    public void testApplicationCreatesSpeakerPackage() throws Exception {
+        createApplication();
+
+        assertNotNull(getApplication());
+        assertEquals("garethpaul.com.androidspeaker", getApplication().getPackageName());
+    }
 }

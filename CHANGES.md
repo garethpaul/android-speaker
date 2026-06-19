@@ -1,7 +1,44 @@
 # Changes
 
+## 2026-06-19
+
+- Retained immediate TextToSpeech constructor failures until the returned
+  engine can be stopped and shut down, closing an Android 5.1 lifecycle leak.
+- Normalized control characters and repeated whitespace before speech input
+  validation.
+- Added transient audio-focus ownership with stale-callback-safe release on
+  terminal callbacks, focus loss, immediate failure, pause, and destroy.
+- Added seven pure JVM lifecycle, input, and focus tests alongside the existing
+  six utterance ownership tests.
+
+## 2026-06-15
+
+- The explicit launcher export boundary is limited to .MainActivity and preserves its MAIN/LAUNCHER entry point.
+- Added pure JVM utterance ownership tests for replacement speech, stale and
+  null callbacks, exact clearing, and lifecycle abandonment.
+- Moved the synchronized ownership state machine out of the activity without
+  changing TextToSpeech or UI behavior.
+
+## 2026-06-14
+
+- Added an instrumentation bootstrap assertion that creates the application and
+  verifies the Android Speaker package identity.
+- Added an exact-commit Android Speaker device verification matrix for engine
+  readiness, input boundaries, utterance ownership, completion, lifecycle
+  cleanup, engine and audio-route changes, and privacy-safe evidence, with every runtime row explicitly unexecuted.
+
+## 2026-06-13
+
+- Guarded TextToSpeech listener registration failure so playback is not marked
+  ready without ownership callbacks and the unusable engine is released.
+
 ## 2026-06-12
 
+- Regenerated the Gradle wrapper bootstrap with official Gradle 8.14.5 tooling
+  while retaining the Gradle 2.2.1 Android runtime.
+- Pinned the official distribution checksum and exact wrapper artifact contracts.
+- Promoted CI to the complete API 22 lint, unit-test, assembly, and structured
+  merged-manifest privacy gate with deterministic legacy resource processing.
 - Released the platform text-to-speech engine immediately when engine or
   language initialization fails instead of retaining unusable native resources.
 
@@ -20,8 +57,17 @@
   superseded-run cancellation.
 - Added a pinned, read-only GitHub Actions check workflow that runs the existing
   `make check` baseline with a bounded timeout and explicit SDK-free execution.
-- Added an SDK-free guard requiring the CI workflow and completed CI baseline
-  plan to remain checked in.
+- Disabled persisted checkout credentials, added CODEOWNERS for CI and the
+  complete Android app tree, and made the SDK-free guard require one exact
+  canonical workflow instead of bypassable substring matches.
+- Extended privacy checks across alternate Android source sets so debug or
+  flavor code cannot restore network permission or remote speech unnoticed.
+- Rejected encoded permission names, direct network clients, unaudited
+  dependency declarations, and local Android binary dependencies.
+- Locked the fixed legacy Gradle configuration and module inventory against
+  source-set redirection or cross-project dependency injection.
+- Removed an inaccurate generated device preview that did not represent the
+  application UI.
 - Removed the maintainer-specific Android SDK path from the Makefile.
 
 ## 2026-06-09

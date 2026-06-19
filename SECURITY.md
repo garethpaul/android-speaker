@@ -33,13 +33,42 @@ Helpful reports include:
 - Review found file, document, data, or media parsing flows; changes in those areas should receive security-focused review before merge.
 - Dependency manifests detected: build.gradle, gradle.properties. Dependency updates should preserve lockfiles when present and avoid introducing packages without a clear maintenance reason.
 - Pinned, read-only GitHub Actions runs the repository `make check` baseline
-  before review without inheriting hosted Android SDK state.
+  before review without inheriting hosted Android SDK state or persisted
+  checkout credentials. The SDK-free baseline requires this to remain the only
+  workflow and match its canonical contract exactly.
+- TextToSpeech listener registration failure cannot leave playback enabled or
+  retain an engine without the callbacks required for utterance ownership.
+- Synchronous constructor failure is retained until the returned TextToSpeech
+  object can be stopped and shut down, avoiding a native-resource leak.
+- Control characters are removed from speech input before engine dispatch, and
+  transient audio focus is released only by the current utterance or lifecycle
+  owner.
+- The baseline pins and verifies the wrapper JAR and Gradle distribution checksums.
+  An uncached bootstrap still depends on Gradle's HTTPS service.
+- CODEOWNERS covers workflows, verification entry points, and the complete app
+  tree. The baseline scans every app source-set manifest and Java or Kotlin
+  source file for restored network permission or app-controlled remote speech.
+  It also rejects encoded permission names, direct network clients, unaudited
+  dependency declarations, local JAR or AAR additions, extra Gradle scripts,
+  and changes to the fixed legacy Gradle configuration.
+  Repository rules should require owner approval for changes to those paths.
 
 ## Mobile Privacy Notes
+
+- The SDK-free baseline does not inspect a built merged manifest. Android
+  SDK-backed lint, tests, assembly, and merged-manifest review remain required
+  before claiming platform-level permission verification.
+- The absence of an app `INTERNET` permission does not prove that every
+  user-selected platform TTS engine performs synthesis locally. Device and
+  engine privacy settings remain a runtime boundary.
+- The explicit launcher export boundary is limited to .MainActivity and preserves its MAIN/LAUNCHER entry point.
 
 If this project requests device permissions such as location, camera, microphone, contacts, Bluetooth, health data, or local storage access, reports should describe the permission involved and whether sensitive data can be accessed, persisted, or transmitted unexpectedly. Please avoid testing against real third-party user data or accounts you do not control.
 
 ## Dependency and Supply Chain Security
+
+The generated Gradle 8.14.5 bootstrap retains the legacy Gradle 2.2.1 runtime
+required by Android Gradle Plugin 1.1.0. Review all four wrapper files together.
 
 Dependency updates should come from trusted package managers and should keep lockfiles in sync when lockfiles exist. Do not commit credentials, private keys, tokens, generated secrets, or machine-local configuration. If a vulnerability depends on a compromised package, typosquatting risk, insecure transitive dependency, or unsafe build step, include the package name, affected version, and the path through which it is used.
 

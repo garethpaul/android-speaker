@@ -1,8 +1,8 @@
-.PHONY: build check lint test verify
+.PHONY: build check lint manifest test verify
 
 ANDROID_HOME ?=
 ANDROID_SDK_ROOT ?=
-ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+override ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ANDROID_SDK := $(if $(ANDROID_HOME),$(ANDROID_HOME),$(ANDROID_SDK_ROOT))
 GRADLE ?= $(ROOT)gradlew
 
@@ -15,6 +15,7 @@ lint:
 	fi
 
 test:
+	PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s $(ROOT)scripts -p 'test_*.py'
 	@if [ -n "$(ANDROID_SDK)" ] && [ -d "$(ANDROID_SDK)" ]; then \
 		cd $(ROOT) && ANDROID_HOME="$(ANDROID_SDK)" ANDROID_SDK_ROOT="$(ANDROID_SDK)" $(GRADLE) test --no-daemon; \
 	else \
@@ -28,6 +29,13 @@ build:
 		echo "Android SDK not configured; Gradle build skipped."; \
 	fi
 
-verify: lint test build
+manifest: build
+	@if [ -n "$(ANDROID_SDK)" ] && [ -d "$(ANDROID_SDK)" ]; then \
+		PYTHONDONTWRITEBYTECODE=1 python3 $(ROOT)scripts/check_merged_manifest.py; \
+	else \
+		echo "Android SDK not configured; merged manifest check skipped."; \
+	fi
+
+verify: lint test manifest
 
 check: verify

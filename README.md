@@ -37,9 +37,15 @@ Additional scan context:
 
 - Git
 - Android Studio or a compatible Android SDK
-- Gradle or the checked-in Gradle wrapper when present
+- Java 8 and the checked-in Gradle wrapper
 
 ### Setup
+
+The generated wrapper still executes Gradle 2.2.1 for compatibility. It uses
+`distributionSha256Sum` to authenticate the downloaded distribution, while the
+SDK-free baseline verifies the checked-in wrapper JAR and launchers. This does
+not make an uncached build offline-reproducible; the first build still needs
+Gradle's HTTPS distribution service.
 
 ```bash
 git clone https://github.com/garethpaul/android-speaker.git
@@ -62,17 +68,23 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make lint` - runs the SDK-free baseline and Gradle lint when the Android SDK is configured.
 - `make test` - runs Gradle tests when the Android SDK is configured.
 - `make build` - runs debug assembly when the Android SDK is configured.
-- `make check` - runs the aggregate lint, test, and build gates.
+- The explicit launcher export boundary is limited to .MainActivity and preserves its MAIN/LAUNCHER entry point.
+- `make manifest` - assembles and validates the merged debug manifest when the Android SDK is configured.
+- `make check` - runs the aggregate lint, test, build, and merged-manifest gates.
 - `scripts/check-baseline.sh` - runs SDK-free source baseline checks.
-- GitHub Actions runs `make check` through `.github/workflows/check.yml` on
-  pushes, pull requests, and manual dispatches. The workflow uses Ubuntu 24.04
-  and cancels superseded runs.
-- Local Gradle checks accept `ANDROID_HOME` or `ANDROID_SDK_ROOT`; CI clears
-  both variables to preserve the documented static-only boundary.
+- GitHub Actions installs Android API 22 and build-tools 24.0.3 under Java 8,
+  then runs the complete `make check` gate on pushes, pull requests, and manual
+  dispatches. The workflow uses Ubuntu 24.04 and cancels superseded runs.
+- Local Gradle checks accept `ANDROID_HOME` or `ANDROID_SDK_ROOT`.
 - The SDK-free baseline protects input normalization, platform engine
   initialization, utterance failure handling, lifecycle cleanup, privacy, and
   resource hygiene.
 - `./gradlew lint --no-daemon`, `./gradlew test --no-daemon`, and `./gradlew assembleDebug --no-daemon` when the Android SDK is configured.
+
+Use [`DEVICE_VERIFICATION.md`](DEVICE_VERIFICATION.md) for the exact-commit
+Android speaker matrix. It covers engine readiness, input boundaries, utterance
+ownership, completion, lifecycle cleanup, engine and audio-route changes,
+privacy-safe evidence, and explicit unexecuted rows.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -82,6 +94,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - This legacy Android baseline pins Android build-tools 24.0.3 and Android Gradle Plugin 1.1.0.
 - Speech input is trimmed, must be non-empty, and is capped at 200 characters
   in both the layout and dispatch path.
+- Control characters and repeated whitespace are normalized before validation,
+  so control-only text cannot reach the configured speech engine.
 - Startup checks that the required speech controls are available before wiring
   playback actions.
 
@@ -101,6 +115,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 ## Maintenance Notes
 
+- The legacy instrumentation bootstrap creates the application and verifies its
+  package identity; TextToSpeech and device behavior remain outside that
+  assertion.
 - This looks like a legacy Android project or sample. Expect Android SDK, Gradle, and support-library versions to matter.
 - The current baseline avoids logging user-entered text and delegates speech to
   the platform `TextToSpeech` engine instead of an undocumented remote URL.
@@ -110,15 +127,32 @@ When the required SDK or runtime is unavailable, use static checks and source re
   engine when the activity is destroyed.
 - Failed speech-engine initialization releases the engine immediately while
   leaving playback disabled and the activity responsive.
+- Android 5.1 can report constructor failure before the `TextToSpeech` field is
+  assigned. A small initialization state owner retains that failure so the
+  constructed engine is still stopped and shut down after assignment.
+- TextToSpeech listener registration failure uses the same immediate engine
+  cleanup path before playback can be marked ready.
+- Playback requests transient audio focus and releases it on matching terminal
+  callbacks, immediate failure, focus loss, pause, and destroy. Stale callbacks
+  cannot release focus held by newer speech.
 - Utterance ownership transitions are synchronized across UI and engine
   callback threads, and playback errors are revalidated on the UI thread before
   notifying the user.
+- Pure JVM tests cover utterance replacement, stale callbacks, and lifecycle abandonment.
+- See `docs/plans/2026-06-13-speaker-listener-registration-guard.md` for the
+  listener setup ordering and completed verification evidence.
 - It also uses HTTPS Maven Central for build resolution. `app/lint.xml`
-  suppresses only the obsolete lint API database error from this old toolchain
-  and the missing-density-folder warning for the bitmap asset intentionally kept
-  in `drawable-nodpi`.
+  suppresses the obsolete lint API database error, the missing-density-folder
+  warning for the bitmap asset intentionally kept in `drawable-nodpi`, and the
+  deliberately deferred target-SDK modernization warning. All other lint
+  warnings fail the build.
+- The merged-manifest gate verifies package and SDK identity, backup opt-out,
+  launcher wiring, and absence of the `INTERNET` permission in the built app.
 - Future work should add platform speech tests, modernize SDK levels, and verify
   runtime behavior on an emulator or device with multiple installed engines.
+- Hosted and host-Java checks do not prove that a selected device TTS engine is
+  installed, supports US English, stays offline, honors focus consistently, or
+  produces audible output on a specific route.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 - See `docs/plans/2026-06-09-speaker-playback-completion-cleanup.md` for the
@@ -136,6 +170,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `docs/plans/2026-06-10-ci-baseline.md` for the GitHub Actions baseline.
 - See `docs/plans/2026-06-10-platform-text-to-speech.md` for the supported
   platform speech migration.
+- See `docs/plans/2026-06-14-android-speaker-device-verification-checklist.md`
+  for the device evidence matrix and runtime non-claims.
 
 ## Contributing
 

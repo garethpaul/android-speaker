@@ -26,9 +26,20 @@ Priority:
 - Stop active speech when the activity pauses and shut down on destroy
 - Ignore stale utterance callbacks after a newer speech request replaces them
 - Keep utterance ownership atomic across UI and speech-engine callback threads
+- Keep pure JVM utterance ownership tests for replacement, stale callbacks, and abandonment
+- Keep synchronous TextToSpeech initialization failure releasable after constructor return
+- Keep speech input free of control characters before engine dispatch
+- Hold transient audio focus only while current speech owns playback
+- The explicit launcher export boundary is limited to .MainActivity and preserves its MAIN/LAUNCHER entry point.
 - Keep GitHub Actions running the root `make check` baseline before review
+- Keep the legacy Gradle runtime behind a checksum-verified generated wrapper
 - Keep user-entered speech text bounded before platform engine dispatch
 - Keep startup guarded when required speech controls are missing
+- Keep exact-commit Android Speaker device verification matrix evidence
+  separate from portable checks, with unexecuted engine, audio, and lifecycle
+  rows explicit
+- Keep the legacy instrumentation bootstrap assertion compiling while treating
+  speech-engine and audio behavior as a separate device boundary
 
 Next priorities:
 
@@ -36,7 +47,10 @@ Next priorities:
   of the app
 - Remove obsolete storage assumptions
 - Add tests or manual verification notes for playback behavior
-- Modernize Gradle, SDK levels, permissions, and dependencies in a dedicated pass
+- Evaluate Gradle runtime, SDK, permissions, and dependency modernization
+  together in a dedicated compatibility pass; wrapper hardening is separate
+- Execute the device verification matrix with synthetic text and privacy-safe
+  speech-engine, audio-route, and lifecycle evidence
 
 Contribution rules:
 

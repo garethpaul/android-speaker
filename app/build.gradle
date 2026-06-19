@@ -4,6 +4,14 @@ android {
     compileSdkVersion 22
     buildToolsVersion "24.0.3"
 
+    aaptOptions {
+        useNewCruncher false
+    }
+
+    lintOptions {
+        warningsAsErrors true
+    }
+
     defaultConfig {
         applicationId "garethpaul.com.androidspeaker"
         minSdkVersion 21
@@ -21,4 +29,5 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile group: 'junit', name: 'junit', version: '4.13.2'
 }

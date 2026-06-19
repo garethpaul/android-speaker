@@ -1,6 +1,9 @@
 package garethpaul.com.androidspeaker;
 
 import android.app.Activity;
+import android.content.Context;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
@@ -20,15 +23,26 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private Button playButton;
     private EditText textInput;
     private TextToSpeech textToSpeech;
-    private boolean textToSpeechReady;
-    private long utteranceSequence;
-    private String activeUtteranceId;
+    private AudioManager audioManager;
+    private final SpeakerInitialization speakerInitialization = new SpeakerInitialization();
+    private final UtteranceOwnership utteranceOwnership = new UtteranceOwnership();
+    private final AudioFocusOwnership audioFocusOwnership = new AudioFocusOwnership();
+    private final AudioManager.OnAudioFocusChangeListener audioFocusChangeListener =
+            new AudioManager.OnAudioFocusChangeListener() {
+                @Override
+                public void onAudioFocusChange(int focusChange) {
+                    if (focusChange < 0) {
+                        utteranceOwnership.abandon();
+                        if (textToSpeech != null) {
+                            textToSpeech.stop();
+                        }
+                        releaseAudioFocus();
+                    }
+                }
+            };
 
     static String normalizeSpeechText(String text) {
-        if (text == null) {
-            return "";
-        }
-        return text.trim();
+        return SpeechInput.normalize(text);
     }
 
     @Override
@@ -52,13 +66,20 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             }
         });
 
-        textToSpeech = new TextToSpeech(getApplicationContext(), this);
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        TextToSpeech engine = new TextToSpeech(getApplicationContext(), this);
+        textToSpeech = engine;
+        if (speakerInitialization.shouldReleaseEngineAfterConstruction()) {
+            releaseEngine(engine);
+            textToSpeech = null;
+        }
     }
 
     @Override
     public void onInit(int status) {
         final TextToSpeech engine = textToSpeech;
         if (status != TextToSpeech.SUCCESS || engine == null) {
+            speakerInitialization.complete(false);
             handleEngineInitializationFailure();
             return;
         }
@@ -66,34 +87,58 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         int languageStatus = engine.setLanguage(Locale.US);
         if (languageStatus == TextToSpeech.LANG_MISSING_DATA
                 || languageStatus == TextToSpeech.LANG_NOT_SUPPORTED) {
+            speakerInitialization.complete(false);
             handleEngineInitializationFailure();
             return;
         }
 
-        engine.setOnUtteranceProgressListener(new UtteranceProgressListener() {
-            @Override
-            public void onStart(String utteranceId) {
-            }
+        int audioStatus = engine.setAudioAttributes(new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                .build());
+        if (audioStatus == TextToSpeech.ERROR) {
+            speakerInitialization.complete(false);
+            handleEngineInitializationFailure();
+            return;
+        }
 
-            @Override
-            public void onDone(String utteranceId) {
-                clearActiveUtterance(utteranceId);
-            }
-
-            @Override
-            public void onError(final String utteranceId) {
-                runOnUiThread(new Runnable() {
+        int listenerStatus = engine.setOnUtteranceProgressListener(
+                new UtteranceProgressListener() {
                     @Override
-                    public void run() {
-                        if (clearActiveUtterance(utteranceId)) {
-                            showToast(R.string.speech_playback_failed);
+                    public void onStart(String utteranceId) {
+                    }
+
+                    @Override
+                    public void onDone(String utteranceId) {
+                        if (utteranceOwnership.clear(utteranceId)) {
+                            releaseAudioFocus();
                         }
                     }
-                });
-            }
-        });
 
-        textToSpeechReady = true;
+                    @Override
+                    public void onError(final String utteranceId) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (utteranceOwnership.clear(utteranceId)) {
+                                    releaseAudioFocus();
+                                    showToast(R.string.speech_playback_failed);
+                                }
+                            }
+                        });
+                    }
+                });
+        if (listenerStatus == TextToSpeech.ERROR) {
+            speakerInitialization.complete(false);
+            handleEngineInitializationFailure();
+            return;
+        }
+
+        speakerInitialization.complete(true);
+        if (!speakerInitialization.isReady()) {
+            handleEngineInitializationFailure();
+            return;
+        }
         if (!isFinishing() && !isDestroyed()) {
             playButton.setEnabled(true);
         }
@@ -111,27 +156,31 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         }
 
         TextToSpeech engine = textToSpeech;
-        if (!textToSpeechReady || engine == null) {
+        if (!speakerInitialization.isReady() || engine == null) {
             showToast(R.string.speech_engine_unavailable);
             return;
         }
 
-        String utteranceId = beginUtterance();
+        if (!requestAudioFocus()) {
+            showToast(R.string.speech_playback_failed);
+            return;
+        }
+
+        String utteranceId = utteranceOwnership.begin();
         int result = engine.speak(speechText, TextToSpeech.QUEUE_FLUSH, null, utteranceId);
         if (result == TextToSpeech.ERROR) {
-            clearActiveUtterance(utteranceId);
+            utteranceOwnership.clear(utteranceId);
+            releaseAudioFocus();
             showToast(R.string.speech_playback_failed);
         }
     }
 
     private void handleEngineInitializationFailure() {
-        textToSpeechReady = false;
+        speakerInitialization.complete(false);
         TextToSpeech engine = textToSpeech;
         textToSpeech = null;
-        if (engine != null) {
-            engine.stop();
-            engine.shutdown();
-        }
+        releaseEngine(engine);
+        releaseAudioFocus();
         if (playButton != null) {
             playButton.setEnabled(false);
         }
@@ -139,22 +188,31 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         showToast(R.string.speech_engine_unavailable);
     }
 
-    private synchronized String beginUtterance() {
-        String utteranceId = "speaker-" + (++utteranceSequence);
-        activeUtteranceId = utteranceId;
-        return utteranceId;
-    }
-
-    private synchronized boolean clearActiveUtterance(String utteranceId) {
-        if (utteranceId == null || !utteranceId.equals(activeUtteranceId)) {
+    private boolean requestAudioFocus() {
+        if (!audioFocusOwnership.acquire()) {
+            return true;
+        }
+        if (audioManager == null || audioManager.requestAudioFocus(
+                audioFocusChangeListener,
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            audioFocusOwnership.release();
             return false;
         }
-        activeUtteranceId = null;
         return true;
     }
 
-    private synchronized void abandonActiveUtterance() {
-        activeUtteranceId = null;
+    private void releaseAudioFocus() {
+        if (audioFocusOwnership.release() && audioManager != null) {
+            audioManager.abandonAudioFocus(audioFocusChangeListener);
+        }
+    }
+
+    private void releaseEngine(TextToSpeech engine) {
+        if (engine != null) {
+            engine.stop();
+            engine.shutdown();
+        }
     }
 
     private void showToast(int messageId) {
@@ -165,7 +223,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     @Override
     protected void onPause() {
-        abandonActiveUtterance();
+        utteranceOwnership.abandon();
+        releaseAudioFocus();
         if (textToSpeech != null) {
             textToSpeech.stop();
         }
@@ -174,13 +233,11 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     @Override
     protected void onDestroy() {
-        textToSpeechReady = false;
-        abandonActiveUtterance();
-        if (textToSpeech != null) {
-            textToSpeech.stop();
-            textToSpeech.shutdown();
-            textToSpeech = null;
-        }
+        speakerInitialization.abandon();
+        utteranceOwnership.abandon();
+        releaseAudioFocus();
+        releaseEngine(textToSpeech);
+        textToSpeech = null;
         super.onDestroy();
     }
 }
