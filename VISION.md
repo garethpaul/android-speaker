@@ -27,6 +27,9 @@ Priority:
 - Ignore stale utterance callbacks after a newer speech request replaces them
 - Keep utterance ownership atomic across UI and speech-engine callback threads
 - Keep pure JVM utterance ownership tests for replacement, stale callbacks, and abandonment
+- Keep synchronous TextToSpeech initialization failure releasable after constructor return
+- Keep speech input free of control characters before engine dispatch
+- Hold transient audio focus only while current speech owns playback
 - The explicit launcher export boundary is limited to .MainActivity and preserves its MAIN/LAUNCHER entry point.
 - Keep GitHub Actions running the root `make check` baseline before review
 - Keep the legacy Gradle runtime behind a checksum-verified generated wrapper

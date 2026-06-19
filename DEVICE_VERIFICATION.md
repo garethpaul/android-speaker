@@ -38,13 +38,16 @@ a different implementation.
 | --- | --- | --- | --- |
 | Engine initialization | Playback controls remain disabled until engine, language, and listener setup succeed. | `not run` | `not run` |
 | Engine unavailable | Failed initialization releases the unusable engine and keeps playback disabled. | `not run` | `not run` |
+| Immediate constructor failure | A failure callback delivered before constructor return still releases the returned engine. | `not run` | `not run` |
 | Listener registration failure | Listener setup failure prevents readiness and releases the engine. | `not run` | `not run` |
 | Valid speech | Synthetic text is spoken once through the selected platform engine without logging or persistence. | `not run` | `not run` |
 | Empty input | Blank text is rejected without dispatching an utterance. | `not run` | `not run` |
+| Control-only input | Control characters and whitespace normalize to empty and are rejected before dispatch. | `not run` | `not run` |
 | Overlength input | Input above 200 characters is rejected before engine dispatch. | `not run` | `not run` |
 | QUEUE_FLUSH replacement | A newer request replaces active speech and owns subsequent completion callbacks. | `not run` | `not run` |
 | Rapid speak replacement | Repeated taps cannot let stale callbacks clear or mutate the current utterance. | `not run` | `not run` |
 | Completion callback | Successful completion clears only the matching utterance ownership state. | `not run` | `not run` |
+| Audio focus | Current speech acquires transient focus and releases it on completion, error, focus loss, pause, or destroy. | `not run` | `not run` |
 | Pause during speech | Pausing the activity stops active speech and rejects late callbacks. | `not run` | `not run` |
 | Destroy during speech | Destruction stops and shuts down the engine without retaining native resources. | `not run` | `not run` |
 | Engine change | Switching the configured platform engine preserves readiness and failure boundaries. | `not run` | `not run` |

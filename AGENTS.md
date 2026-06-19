@@ -47,8 +47,9 @@
 
 - No required secret or credential file was identified in the repository scan. If you add integrations later, keep secrets out of git.
 - This legacy Android baseline pins Android build-tools 24.0.3 and Android Gradle Plugin 1.1.0.
-- Speech input is trimmed, must be non-empty, and is capped at 200 characters before dispatch to the platform `TextToSpeech` engine.
+- Speech input normalizes whitespace and control characters, must be non-empty, and is capped at 200 characters before dispatch to the platform `TextToSpeech` engine.
 - The app does not request `INTERNET`; preserve engine readiness checks, `QUEUE_FLUSH`, synchronized utterance ownership, stale-callback rejection, and pause/destroy cleanup.
+- Preserve synchronous initialization-failure cleanup and transient audio-focus ownership across callbacks and lifecycle changes.
 - Startup checks that the required speech controls are available before wiring playback actions.
 - Auto Backup disabled is part of the privacy baseline because the app has no documented restore behavior for user-entered speech text or generated playback state.
 - The explicit launcher export boundary is limited to .MainActivity and preserves its MAIN/LAUNCHER entry point.

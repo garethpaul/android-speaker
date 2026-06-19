@@ -94,6 +94,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - This legacy Android baseline pins Android build-tools 24.0.3 and Android Gradle Plugin 1.1.0.
 - Speech input is trimmed, must be non-empty, and is capped at 200 characters
   in both the layout and dispatch path.
+- Control characters and repeated whitespace are normalized before validation,
+  so control-only text cannot reach the configured speech engine.
 - Startup checks that the required speech controls are available before wiring
   playback actions.
 
@@ -125,8 +127,14 @@ When the required SDK or runtime is unavailable, use static checks and source re
   engine when the activity is destroyed.
 - Failed speech-engine initialization releases the engine immediately while
   leaving playback disabled and the activity responsive.
+- Android 5.1 can report constructor failure before the `TextToSpeech` field is
+  assigned. A small initialization state owner retains that failure so the
+  constructed engine is still stopped and shut down after assignment.
 - TextToSpeech listener registration failure uses the same immediate engine
   cleanup path before playback can be marked ready.
+- Playback requests transient audio focus and releases it on matching terminal
+  callbacks, immediate failure, focus loss, pause, and destroy. Stale callbacks
+  cannot release focus held by newer speech.
 - Utterance ownership transitions are synchronized across UI and engine
   callback threads, and playback errors are revalidated on the UI thread before
   notifying the user.
@@ -142,6 +150,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
   launcher wiring, and absence of the `INTERNET` permission in the built app.
 - Future work should add platform speech tests, modernize SDK levels, and verify
   runtime behavior on an emulator or device with multiple installed engines.
+- Hosted and host-Java checks do not prove that a selected device TTS engine is
+  installed, supports US English, stays offline, honors focus consistently, or
+  produces audible output on a specific route.
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 - See `docs/plans/2026-06-09-speaker-playback-completion-cleanup.md` for the

@@ -1,5 +1,16 @@
 # Changes
 
+## 2026-06-19
+
+- Retained immediate TextToSpeech constructor failures until the returned
+  engine can be stopped and shut down, closing an Android 5.1 lifecycle leak.
+- Normalized control characters and repeated whitespace before speech input
+  validation.
+- Added transient audio-focus ownership with stale-callback-safe release on
+  terminal callbacks, focus loss, immediate failure, pause, and destroy.
+- Added seven pure JVM lifecycle, input, and focus tests alongside the existing
+  six utterance ownership tests.
+
 ## 2026-06-15
 
 - The explicit launcher export boundary is limited to .MainActivity and preserves its MAIN/LAUNCHER entry point.

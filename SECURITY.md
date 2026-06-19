@@ -38,6 +38,11 @@ Helpful reports include:
   workflow and match its canonical contract exactly.
 - TextToSpeech listener registration failure cannot leave playback enabled or
   retain an engine without the callbacks required for utterance ownership.
+- Synchronous constructor failure is retained until the returned TextToSpeech
+  object can be stopped and shut down, avoiding a native-resource leak.
+- Control characters are removed from speech input before engine dispatch, and
+  transient audio focus is released only by the current utterance or lifecycle
+  owner.
 - The baseline pins and verifies the wrapper JAR and Gradle distribution checksums.
   An uncached bootstrap still depends on Gradle's HTTPS service.
 - CODEOWNERS covers workflows, verification entry points, and the complete app
@@ -53,6 +58,9 @@ Helpful reports include:
 - The SDK-free baseline does not inspect a built merged manifest. Android
   SDK-backed lint, tests, assembly, and merged-manifest review remain required
   before claiming platform-level permission verification.
+- The absence of an app `INTERNET` permission does not prove that every
+  user-selected platform TTS engine performs synthesis locally. Device and
+  engine privacy settings remain a runtime boundary.
 - The explicit launcher export boundary is limited to .MainActivity and preserves its MAIN/LAUNCHER entry point.
 
 If this project requests device permissions such as location, camera, microphone, contacts, Bluetooth, health data, or local storage access, reports should describe the permission involved and whether sensitive data can be accessed, persisted, or transmitted unexpectedly. Please avoid testing against real third-party user data or accounts you do not control.

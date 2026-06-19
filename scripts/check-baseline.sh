@@ -5,6 +5,12 @@ ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 MAIN_ACTIVITY="$ROOT_DIR/app/src/main/java/garethpaul/com/androidspeaker/MainActivity.java"
 UTTERANCE_OWNERSHIP="$ROOT_DIR/app/src/main/java/garethpaul/com/androidspeaker/UtteranceOwnership.java"
 UTTERANCE_OWNERSHIP_TEST="$ROOT_DIR/app/src/test/java/garethpaul/com/androidspeaker/UtteranceOwnershipTest.java"
+SPEECH_INPUT="$ROOT_DIR/app/src/main/java/garethpaul/com/androidspeaker/SpeechInput.java"
+SPEECH_INPUT_TEST="$ROOT_DIR/app/src/test/java/garethpaul/com/androidspeaker/SpeechInputTest.java"
+SPEAKER_INITIALIZATION="$ROOT_DIR/app/src/main/java/garethpaul/com/androidspeaker/SpeakerInitialization.java"
+SPEAKER_INITIALIZATION_TEST="$ROOT_DIR/app/src/test/java/garethpaul/com/androidspeaker/SpeakerInitializationTest.java"
+AUDIO_FOCUS_OWNERSHIP="$ROOT_DIR/app/src/main/java/garethpaul/com/androidspeaker/AudioFocusOwnership.java"
+AUDIO_FOCUS_OWNERSHIP_TEST="$ROOT_DIR/app/src/test/java/garethpaul/com/androidspeaker/AudioFocusOwnershipTest.java"
 APP_BUILD="$ROOT_DIR/app/build.gradle"
 MANIFEST="$ROOT_DIR/app/src/main/AndroidManifest.xml"
 ROOT_BUILD="$ROOT_DIR/build.gradle"
@@ -301,16 +307,22 @@ for tts_contract in \
   "engine.setLanguage(Locale.US)" \
   "TextToSpeech.LANG_MISSING_DATA" \
   "TextToSpeech.LANG_NOT_SUPPORTED" \
+  "engine.setAudioAttributes(new AudioAttributes.Builder()" \
+  "AudioAttributes.CONTENT_TYPE_SPEECH" \
   "playButton.setEnabled(false)" \
   "playButton.setEnabled(true)" \
   "setOnUtteranceProgressListener" \
+  "private final SpeakerInitialization speakerInitialization" \
   "private final UtteranceOwnership utteranceOwnership" \
+  "private final AudioFocusOwnership audioFocusOwnership" \
   "utteranceOwnership.clear(utteranceId)" \
+  "requestAudioFocus()" \
+  "releaseAudioFocus()" \
   "String utteranceId = utteranceOwnership.begin()" \
   "engine.speak(speechText, TextToSpeech.QUEUE_FLUSH, null, utteranceId)" \
   "if (result == TextToSpeech.ERROR)" \
   "textToSpeech.stop()" \
-  "textToSpeech.shutdown()"; do
+  "engine.shutdown()"; do
   if ! grep -Fq "$tts_contract" "$MAIN_ACTIVITY"; then
     printf '%s\n' "Missing platform text-to-speech contract: $tts_contract" >&2
     exit 1
@@ -318,14 +330,14 @@ for tts_contract in \
 done
 
 LISTENER_SETUP=$(sed -n \
-  '/int listenerStatus = engine.setOnUtteranceProgressListener(/,/textToSpeechReady = true;/p' \
+  '/int listenerStatus = engine.setOnUtteranceProgressListener(/,/speakerInitialization.complete(true);/p' \
   "$MAIN_ACTIVITY")
 for listener_contract in \
   "int listenerStatus = engine.setOnUtteranceProgressListener(" \
   "if (listenerStatus == TextToSpeech.ERROR)" \
   "handleEngineInitializationFailure();" \
   "return;" \
-  "textToSpeechReady = true;"; do
+  "speakerInitialization.complete(true);"; do
   if ! printf '%s\n' "$LISTENER_SETUP" | grep -Fq "$listener_contract"; then
     printf '%s\n' "Speaker listener registration guard is missing: $listener_contract" >&2
     exit 1
@@ -334,7 +346,7 @@ done
 listener_call_line=$(printf '%s\n' "$LISTENER_SETUP" | grep -nF "int listenerStatus =" | cut -d: -f1)
 listener_error_line=$(printf '%s\n' "$LISTENER_SETUP" | grep -nF "if (listenerStatus == TextToSpeech.ERROR)" | cut -d: -f1)
 listener_cleanup_line=$(printf '%s\n' "$LISTENER_SETUP" | grep -nF "handleEngineInitializationFailure();" | cut -d: -f1)
-listener_ready_line=$(printf '%s\n' "$LISTENER_SETUP" | grep -nF "textToSpeechReady = true;" | cut -d: -f1)
+listener_ready_line=$(printf '%s\n' "$LISTENER_SETUP" | grep -nF "speakerInitialization.complete(true);" | cut -d: -f1)
 if [ -z "$listener_call_line" ] || [ -z "$listener_error_line" ] || \
    [ -z "$listener_cleanup_line" ] || [ -z "$listener_ready_line" ] || \
    [ "$listener_call_line" -ge "$listener_error_line" ] || \
@@ -962,8 +974,86 @@ if ! grep -Fq "testCompile group: 'junit', name: 'junit', version: '4.13.2'" "$A
   exit 1
 fi
 
-if [ "$(grep -Fc "utteranceOwnership.abandon();" "$MAIN_ACTIVITY")" -ne 2 ]; then
+pause_method=$(sed -n '/protected void onPause()/,/^    }/p' "$MAIN_ACTIVITY")
+destroy_method=$(sed -n '/protected void onDestroy()/,/^    }/p' "$MAIN_ACTIVITY")
+if ! printf '%s\n' "$pause_method" | grep -Fq "utteranceOwnership.abandon();" || \
+   ! printf '%s\n' "$destroy_method" | grep -Fq "utteranceOwnership.abandon();"; then
   printf '%s\n' "Pause and destroy must both abandon utterance ownership." >&2
+  exit 1
+fi
+
+for lifecycle_file in \
+  "$SPEECH_INPUT" "$SPEECH_INPUT_TEST" \
+  "$SPEAKER_INITIALIZATION" "$SPEAKER_INITIALIZATION_TEST" \
+  "$AUDIO_FOCUS_OWNERSHIP" "$AUDIO_FOCUS_OWNERSHIP_TEST"; do
+  if [ ! -f "$lifecycle_file" ]; then
+    printf '%s\n' "Required speaker lifecycle file is missing: ${lifecycle_file#"$ROOT_DIR/"}" >&2
+    exit 1
+  fi
+done
+
+for input_contract in \
+  "Character.isISOControl(character)" \
+  "stripsControlCharactersBeforeSpeech" \
+  "rejectsControlOnlyInput"; do
+  if ! grep -Fq "$input_contract" "$SPEECH_INPUT" "$SPEECH_INPUT_TEST"; then
+    printf '%s\n' "Speech input control-character contract is missing: $input_contract" >&2
+    exit 1
+  fi
+done
+
+for initialization_contract in \
+  "synchronized void complete(boolean successful)" \
+  "ready = successful && !abandoned;" \
+  "synchronized void abandon()" \
+  "shouldReleaseEngineAfterConstruction" \
+  "synchronousFailureIsRetainedUntilConstructedEngineCanBeReleased" \
+  "abandonmentPreventsLateInitializationFromBecomingReady"; do
+  if ! grep -Fq "$initialization_contract" "$SPEAKER_INITIALIZATION" "$SPEAKER_INITIALIZATION_TEST"; then
+    printf '%s\n' "Speaker initialization lifecycle contract is missing: $initialization_contract" >&2
+    exit 1
+  fi
+done
+
+for initialization_integration_contract in \
+  "TextToSpeech engine = new TextToSpeech(getApplicationContext(), this);" \
+  "textToSpeech = engine;" \
+  "if (speakerInitialization.shouldReleaseEngineAfterConstruction())" \
+  "speakerInitialization.complete(false);" \
+  "speakerInitialization.complete(true);" \
+  "speakerInitialization.abandon();"; do
+  if ! grep -Fq "$initialization_integration_contract" "$MAIN_ACTIVITY"; then
+    printf '%s\n' "Speaker initialization integration is missing: $initialization_integration_contract" >&2
+    exit 1
+  fi
+done
+
+for focus_contract in \
+  "synchronized boolean acquire()" \
+  "synchronized boolean release()" \
+  "if (!held)" \
+  "held = false;" \
+  "repeatedPlaybackReusesHeldFocus" \
+  "releaseIsOwnedExactlyOnce"; do
+  if ! grep -Fq "$focus_contract" "$AUDIO_FOCUS_OWNERSHIP" "$AUDIO_FOCUS_OWNERSHIP_TEST"; then
+    printf '%s\n' "Speaker audio-focus ownership contract is missing: $focus_contract" >&2
+    exit 1
+  fi
+done
+
+if [ "$(grep -Fc "releaseAudioFocus();" "$MAIN_ACTIVITY")" -lt 5 ]; then
+  printf '%s\n' "Speech completion, failure, focus loss, pause, and destroy must release audio focus." >&2
+  exit 1
+fi
+
+focus_callback=$(sed -n '/public void onAudioFocusChange(int focusChange)/,/^                }/p' "$MAIN_ACTIVITY")
+done_callback=$(sed -n '/public void onDone(String utteranceId)/,/^                    }/p' "$MAIN_ACTIVITY")
+error_callback=$(sed -n '/public void onError(final String utteranceId)/,/^                    }/p' "$MAIN_ACTIVITY")
+if ! printf '%s\n' "$focus_callback" | grep -Fq "focusChange < 0" || \
+   ! printf '%s\n' "$focus_callback" | grep -Fq "releaseAudioFocus();" || \
+   ! printf '%s\n' "$done_callback" | grep -Fq "releaseAudioFocus();" || \
+   ! printf '%s\n' "$error_callback" | grep -Fq "releaseAudioFocus();"; then
+  printf '%s\n' "Speech focus loss and terminal callbacks must release owned audio focus." >&2
   exit 1
 fi
 
