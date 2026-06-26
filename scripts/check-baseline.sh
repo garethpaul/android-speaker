@@ -41,6 +41,9 @@ WRAPPER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-gradle-wrapper-verification.md"
 GRADLEW="$ROOT_DIR/gradlew"
 GRADLEW_BAT="$ROOT_DIR/gradlew.bat"
 WRAPPER_JAR="$ROOT_DIR/gradle/wrapper/gradle-wrapper.jar"
+SPEECH_INPUT_HARNESS="$ROOT_DIR/scripts/test-speech-input.sh"
+UNICODE_SPACE_MUTATION="$ROOT_DIR/scripts/test-unicode-space-mutation.sh"
+UNICODE_SPACE_PLAN="$ROOT_DIR/docs/plans/2026-06-26-unicode-space-normalization.md"
 
 sha256_file() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}';
@@ -994,13 +997,44 @@ done
 
 for input_contract in \
   "Character.isISOControl(character)" \
+  "Character.isSpaceChar(character)" \
   "stripsControlCharactersBeforeSpeech" \
-  "rejectsControlOnlyInput"; do
+  "rejectsControlOnlyInput" \
+  "collapsesUnicodeSpaceCharacters" \
+  "rejectsUnicodeSpaceOnlyInput"; do
   if ! grep -Fq "$input_contract" "$SPEECH_INPUT" "$SPEECH_INPUT_TEST"; then
-    printf '%s\n' "Speech input control-character contract is missing: $input_contract" >&2
+    printf '%s\n' "Speech input normalization contract is missing: $input_contract" >&2
     exit 1
   fi
 done
+
+for unicode_space_file in \
+  "$SPEECH_INPUT_HARNESS" \
+  "$UNICODE_SPACE_MUTATION" \
+  "$UNICODE_SPACE_PLAN"; do
+  if [ ! -f "$unicode_space_file" ]; then
+    printf '%s\n' "Unicode speech-space verification file is missing: ${unicode_space_file#"$ROOT_DIR/"}" >&2
+    exit 1
+  fi
+done
+
+for unicode_space_contract in \
+  'Status: Completed' \
+  'Character.isSpaceChar' \
+  'focused speech-input harness' \
+  'hostile mutation' \
+  'make check'; do
+  if ! grep -Fq "$unicode_space_contract" "$UNICODE_SPACE_PLAN"; then
+    printf '%s\n' "Unicode speech-space plan must keep completion evidence: $unicode_space_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq 'test-unicode-space-mutation.sh' "$ROOT_DIR/Makefile" || \
+   ! grep -Fq 'Character.isSpaceChar(character)' "$UNICODE_SPACE_MUTATION"; then
+  printf '%s\n' "Unicode speech-space mutation must remain wired to the root test gate." >&2
+  exit 1
+fi
 
 for initialization_contract in \
   "synchronized void complete(boolean successful)" \

@@ -40,9 +40,9 @@ Helpful reports include:
   retain an engine without the callbacks required for utterance ownership.
 - Synchronous constructor failure is retained until the returned TextToSpeech
   object can be stopped and shut down, avoiding a native-resource leak.
-- Control characters are removed from speech input before engine dispatch, and
-  transient audio focus is released only by the current utterance or lifecycle
-  owner.
+- Control characters and Unicode separator characters, including no-break
+  spaces, are normalized before speech input validation, and transient audio
+  focus is released only by the current utterance or lifecycle owner.
 - The baseline pins and verifies the wrapper JAR and Gradle distribution checksums.
   An uncached bootstrap still depends on Gradle's HTTPS service.
 - CODEOWNERS covers workflows, verification entry points, and the complete app

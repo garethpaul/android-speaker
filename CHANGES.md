@@ -1,5 +1,15 @@
 # Changes
 
+## 2026-06-26
+
+- Normalized Unicode separator characters, including no-break spaces, before
+  speech validation so visually blank text cannot reach the platform engine.
+- Added focused JVM coverage for embedded and separator-only input plus a
+  hostile mutation that proves the `Character.isSpaceChar` guard is required.
+- Re-audited TextToSpeech initialization, utterance ownership, transient audio
+  focus, pause/destroy cleanup, manifest privacy, and the legacy build boundary;
+  no additional correction was required in those paths.
+
 ## 2026-06-19
 
 - Retained immediate TextToSpeech constructor failures until the returned

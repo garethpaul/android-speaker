@@ -16,6 +16,12 @@ lint:
 
 test:
 	PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s $(ROOT)scripts -p 'test_*.py'
+	@if command -v javac >/dev/null 2>&1 && command -v java >/dev/null 2>&1; then \
+		$(ROOT)scripts/test-speech-input.sh; \
+		$(ROOT)scripts/test-unicode-space-mutation.sh; \
+	else \
+		echo "Java compiler/runtime unavailable; speech input harness skipped."; \
+	fi
 	@if [ -n "$(ANDROID_SDK)" ] && [ -d "$(ANDROID_SDK)" ]; then \
 		cd $(ROOT) && ANDROID_HOME="$(ANDROID_SDK)" ANDROID_SDK_ROOT="$(ANDROID_SDK)" $(GRADLE) test --no-daemon; \
 	else \
