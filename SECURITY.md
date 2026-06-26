@@ -41,8 +41,10 @@ Helpful reports include:
 - Synchronous constructor failure is retained until the returned TextToSpeech
   object can be stopped and shut down, avoiding a native-resource leak.
 - Control characters and Unicode separator characters, including no-break
-  spaces, are normalized before speech input validation, and transient audio
-  focus is released only by the current utterance or lifecycle owner.
+  spaces, are normalized before speech input validation. Format-only and
+  combining-mark-only input is rejected while visible Unicode sequences remain
+  unchanged, and transient audio focus is released only by the current
+  utterance or lifecycle owner.
 - The baseline pins and verifies the wrapper JAR and Gradle distribution checksums.
   An uncached bootstrap still depends on Gradle's HTTPS service.
 - CODEOWNERS covers workflows, verification entry points, and the complete app

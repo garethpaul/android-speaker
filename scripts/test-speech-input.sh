@@ -18,6 +18,12 @@ public final class SpeechInputHarness {
         assertEquals("", SpeechInput.normalize("\u0000\n\t"));
         assertEquals("Hello world", SpeechInput.normalize("Hello\u00a0\u2007\u202fworld"));
         assertEquals("", SpeechInput.normalize("\u00a0\u2007\u202f"));
+        assertEquals("", SpeechInput.normalize("\u200b\u200d"));
+        assertEquals("", SpeechInput.normalize("\u0301\u034f"));
+        assertEquals("Cafe\u0301", SpeechInput.normalize("Cafe\u0301"));
+        assertEquals(
+                "\ud83d\udc69\u200d\ud83d\udcbb",
+                SpeechInput.normalize("\ud83d\udc69\u200d\ud83d\udcbb"));
     }
 
     private static void assertEquals(String expected, String actual) {

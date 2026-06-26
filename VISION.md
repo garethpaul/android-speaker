@@ -28,7 +28,9 @@ Priority:
 - Keep utterance ownership atomic across UI and speech-engine callback threads
 - Keep pure JVM utterance ownership tests for replacement, stale callbacks, and abandonment
 - Keep synchronous TextToSpeech initialization failure releasable after constructor return
-- Keep speech input free of control-only or Unicode-separator-only payloads before engine dispatch
+- Keep speech input free of control-only, Unicode-separator-only, format-only,
+  or combining-mark-only payloads before engine dispatch while preserving
+  visible decomposed text and emoji sequences
 - Hold transient audio focus only while current speech owns playback
 - The explicit launcher export boundary is limited to .MainActivity and preserves its MAIN/LAUNCHER entry point.
 - Keep GitHub Actions running the root `make check` baseline before review
