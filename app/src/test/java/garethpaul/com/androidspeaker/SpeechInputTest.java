@@ -24,4 +24,18 @@ public class SpeechInputTest {
     public void rejectsUnicodeSpaceOnlyInput() {
         assertEquals("", SpeechInput.normalize("\u00a0\u2007\u202f"));
     }
+
+    @Test
+    public void rejectsFormatAndCombiningMarkOnlyInput() {
+        assertEquals("", SpeechInput.normalize("\u200b\u200d"));
+        assertEquals("", SpeechInput.normalize("\u0301\u034f"));
+    }
+
+    @Test
+    public void preservesVisibleUnicodeWithFormatAndCombiningMarks() {
+        assertEquals("Cafe\u0301", SpeechInput.normalize("Cafe\u0301"));
+        assertEquals(
+                "\ud83d\udc69\u200d\ud83d\udcbb",
+                SpeechInput.normalize("\ud83d\udc69\u200d\ud83d\udcbb"));
+    }
 }

@@ -97,6 +97,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Control characters, repeated Java whitespace, and Unicode separator
   characters (including no-break spaces) are normalized before validation, so
   visually blank text cannot reach the configured speech engine.
+- Format-only and combining-mark-only input is rejected without removing marks
+  or joiners from visible decomposed text and emoji sequences.
 - Startup checks that the required speech controls are available before wiring
   playback actions.
 

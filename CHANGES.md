@@ -2,6 +2,28 @@
 
 ## 2026-06-26
 
+- **Timestamp:** 2026-06-26 13:32:49 PDT.
+- **Priority:** Speech input visibility integrity.
+- **Summary:** Require normalized speech input to contain a Unicode letter,
+  number, punctuation mark, or symbol before platform dispatch, rejecting
+  format-only and combining-mark-only payloads while preserving visible
+  decomposed text and emoji joiner sequences.
+- **Files:** `SpeechInput.java`, `SpeechInputTest.java`, `Makefile`,
+  `scripts/test-speech-input.sh`, `scripts/test-unicode-space-mutation.sh`,
+  `scripts/test-visible-speech-mutation.sh`, `scripts/check-baseline.sh`,
+  `README.md`, `SECURITY.md`, `VISION.md`, `AGENTS.md`, `CHANGES.md`, and
+  `docs/plans/2026-06-26-visible-speech-content.md`.
+- **Tests:** Added red-first focused JVM cases and a rollback mutation; nine
+  manifest tests, both speech mutations, root/external `make check`, Java 7
+  source compatibility, and an injected Make fail-fast probe pass. Android SDK
+  gates remain hosted-only.
+- **Findings:** Zero-width format characters and combining marks survived the
+  existing whitespace/control normalizer and were treated as non-empty speech.
+  The grouped JVM Make recipe also did not fail fast, and the older separator
+  mutation became masked until its embedded-separator assertion was restored.
+- **Blockers:** None.
+- **Next action:** Verify the exact hosted Android matrix head before merge.
+
 - Normalized Unicode separator characters, including no-break spaces, before
   speech validation so visually blank text cannot reach the platform engine.
 - Added focused JVM coverage for embedded and separator-only input plus a

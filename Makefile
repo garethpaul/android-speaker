@@ -17,8 +17,10 @@ lint:
 test:
 	PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s $(ROOT)scripts -p 'test_*.py'
 	@if command -v javac >/dev/null 2>&1 && command -v java >/dev/null 2>&1; then \
+		set -e; \
 		$(ROOT)scripts/test-speech-input.sh; \
 		$(ROOT)scripts/test-unicode-space-mutation.sh; \
+		$(ROOT)scripts/test-visible-speech-mutation.sh; \
 	else \
 		echo "Java compiler/runtime unavailable; speech input harness skipped."; \
 	fi

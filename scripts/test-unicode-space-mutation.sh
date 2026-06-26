@@ -21,6 +21,10 @@ package garethpaul.com.androidspeaker;
 
 public final class UnicodeSpaceMutationHarness {
     public static void main(String[] args) {
+        if (!"Hello world".equals(
+                SpeechInput.normalize("Hello\u00a0\u2007\u202fworld"))) {
+            throw new AssertionError("embedded Unicode separators were not normalized");
+        }
         if (!"".equals(SpeechInput.normalize("\u00a0\u2007\u202f"))) {
             throw new AssertionError("Unicode separator-only input reached speech dispatch");
         }

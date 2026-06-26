@@ -44,6 +44,8 @@ WRAPPER_JAR="$ROOT_DIR/gradle/wrapper/gradle-wrapper.jar"
 SPEECH_INPUT_HARNESS="$ROOT_DIR/scripts/test-speech-input.sh"
 UNICODE_SPACE_MUTATION="$ROOT_DIR/scripts/test-unicode-space-mutation.sh"
 UNICODE_SPACE_PLAN="$ROOT_DIR/docs/plans/2026-06-26-unicode-space-normalization.md"
+VISIBLE_SPEECH_MUTATION="$ROOT_DIR/scripts/test-visible-speech-mutation.sh"
+VISIBLE_SPEECH_PLAN="$ROOT_DIR/docs/plans/2026-06-26-visible-speech-content.md"
 
 sha256_file() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}';
@@ -1001,7 +1003,11 @@ for input_contract in \
   "stripsControlCharactersBeforeSpeech" \
   "rejectsControlOnlyInput" \
   "collapsesUnicodeSpaceCharacters" \
-  "rejectsUnicodeSpaceOnlyInput"; do
+  "rejectsUnicodeSpaceOnlyInput" \
+  "Character.codePointAt" \
+  "Character.getType" \
+  "rejectsFormatAndCombiningMarkOnlyInput" \
+  "preservesVisibleUnicodeWithFormatAndCombiningMarks"; do
   if ! grep -Fq "$input_contract" "$SPEECH_INPUT" "$SPEECH_INPUT_TEST"; then
     printf '%s\n' "Speech input normalization contract is missing: $input_contract" >&2
     exit 1
@@ -1031,10 +1037,54 @@ for unicode_space_contract in \
 done
 
 if ! grep -Fq 'test-unicode-space-mutation.sh' "$ROOT_DIR/Makefile" || \
-   ! grep -Fq 'Character.isSpaceChar(character)' "$UNICODE_SPACE_MUTATION"; then
+   ! grep -Fq 'Character.isSpaceChar(character)' "$UNICODE_SPACE_MUTATION" || \
+   ! grep -Fq 'embedded Unicode separators were not normalized' "$UNICODE_SPACE_MUTATION"; then
   printf '%s\n' "Unicode speech-space mutation must remain wired to the root test gate." >&2
   exit 1
 fi
+
+if ! awk '/command -v javac/,/else/ { if ($0 ~ /set -e;/) found = 1 } END { exit !found }' \
+    "$ROOT_DIR/Makefile"; then
+  printf '%s\n' "Grouped JVM speech tests must fail fast in the root Make gate." >&2
+  exit 1
+fi
+
+for visible_speech_file in \
+  "$VISIBLE_SPEECH_MUTATION" \
+  "$VISIBLE_SPEECH_PLAN"; do
+  if [ ! -f "$visible_speech_file" ]; then
+    printf '%s\n' "Visible speech verification file is missing: ${visible_speech_file#"$ROOT_DIR"/}" >&2
+    exit 1
+  fi
+done
+
+for visible_speech_contract in \
+  'Status: Completed' \
+  'format-only' \
+  'combining-mark-only' \
+  'emoji ZWJ' \
+  'focused speech-input harness' \
+  'rollback mutation' \
+  'make check'; do
+  if ! grep -Fq "$visible_speech_contract" "$VISIBLE_SPEECH_PLAN"; then
+    printf '%s\n' "Visible speech plan must keep completion evidence: $visible_speech_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq 'test-visible-speech-mutation.sh' "$ROOT_DIR/Makefile" || \
+   ! grep -Fq 'return hasSpeechContent(normalized)' "$VISIBLE_SPEECH_MUTATION"; then
+  printf '%s\n' "Visible speech mutation must remain wired to the root test gate." >&2
+  exit 1
+fi
+
+for visible_speech_doc in "$ROOT_DIR/AGENTS.md" "$README" "$SECURITY" "$ROOT_DIR/VISION.md" "$ROOT_DIR/CHANGES.md"; do
+  if ! tr '\n' ' ' < "$visible_speech_doc" | tr -s '[:space:]' ' ' | \
+      grep -Fiq 'format-only'; then
+    printf '%s\n' "$visible_speech_doc must document the visible speech boundary." >&2
+    exit 1
+  fi
+done
 
 for initialization_contract in \
   "synchronized void complete(boolean successful)" \
