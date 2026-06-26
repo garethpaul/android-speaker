@@ -94,8 +94,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - This legacy Android baseline pins Android build-tools 24.0.3 and Android Gradle Plugin 1.1.0.
 - Speech input is trimmed, must be non-empty, and is capped at 200 characters
   in both the layout and dispatch path.
-- Control characters and repeated whitespace are normalized before validation,
-  so control-only text cannot reach the configured speech engine.
+- Control characters, repeated Java whitespace, and Unicode separator
+  characters (including no-break spaces) are normalized before validation, so
+  visually blank text cannot reach the configured speech engine.
 - Startup checks that the required speech controls are available before wiring
   playback actions.
 

@@ -14,6 +14,7 @@ final class SpeechInput {
         for (int index = 0; index < text.length(); index++) {
             char character = text.charAt(index);
             boolean whitespace = Character.isWhitespace(character)
+                    || Character.isSpaceChar(character)
                     || Character.isISOControl(character);
             if (whitespace) {
                 if (!previousWhitespace) {
